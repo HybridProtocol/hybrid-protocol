@@ -13,7 +13,7 @@ const secret: string = process.env.MNEMONIC_OR_PRIVATE_KEY as string;
 const config: BuidlerConfig = {
   defaultNetwork: 'buidlerevm',
   solc: {
-    version: '0.6.8',
+    version: '0.6.12',
     optimizer: {
       enabled: true,
       runs: 200,
