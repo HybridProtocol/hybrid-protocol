@@ -1,0 +1,27 @@
+{
+  "files.exclude": {
+    "node_modules/": true,
+    "migrations/": true
+  },
+  "solidity.compilerOptimization": 200,
+  "solidity.packageDefaultDependenciesContractsDirectory": "",
+  "solidity.packageDefaultDependenciesDirectory": "node_modules",
+  "solidity.linter": "solium",
+  "solidity.soliumRules": {
+    "quotes": ["error", "double"],
+    "indentation": ["error", 4],
+    "no-unused-vars": false,
+  },
+  "[solidity]": {
+    "editor.tabSize": 4
+  },
+  "[typescript]": {
+    "editor.tabSize": 2
+  },
+  "[javascript]": {
+    "editor.tabSize": 2
+  },
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false
+}
