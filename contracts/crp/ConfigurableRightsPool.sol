@@ -6,17 +6,17 @@ pragma experimental ABIEncoderV2;
 
 // Imports
 
-import "./interfaces/IBFactory.sol";
+import "../../interfaces/IBFactory.sol";
 import "./PCToken.sol";
-import "./utils/BalancerReentrancyGuard.sol";
-import "./utils/BalancerOwnable.sol";
+import "../../utils/BalancerReentrancyGuard.sol";
+import "../../utils/BalancerOwnable.sol";
 
 // Interfaces
 
 // Libraries
-import { RightsManager } from "./libraries/RightsManager.sol";
-import "./libraries/SmartPoolManager.sol";
-import "./libraries/SafeApprove.sol";
+import { RightsManager } from "../../libraries/RightsManager.sol";
+import "../../libraries/SmartPoolManager.sol";
+import "../../libraries/SafeApprove.sol";
 
 // Contracts
 

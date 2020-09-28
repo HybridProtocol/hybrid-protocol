@@ -3,9 +3,9 @@ pragma solidity >=0.6.6;
 
 // Imports
 
-import "./libraries/BalancerSafeMath.sol";
-import "./libraries/BalancerConstants.sol";
-import "./interfaces/IERC20.sol";
+import "../../libraries/BalancerSafeMath.sol";
+import "../../libraries/BalancerConstants.sol";
+import "../../interfaces/IERC20.sol";
 
 // Contracts
 

@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../interfaces/IERC20.sol";
 import "../interfaces/IBFactory.sol";
-import "../ConfigurableRightsPool.sol";
+import "../contracts/crp/ConfigurableRightsPool.sol";
 import "./BalancerConstants.sol";
 import "./BalancerSafeMath.sol";
 import "./SafeApprove.sol";
