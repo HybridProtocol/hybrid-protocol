@@ -4,14 +4,14 @@ pragma solidity >=0.6.6;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../libraries/PresaleConstants.sol";
-import "../../interfaces/IServiceHybridToken.sol";
+import "../../interfaces/ISaleHybridToken.sol";
 
 
 contract Presale is Ownable {
     using SafeMath for uint256;
 
     IERC20 USDC;
-    IServiceHybridToken SHBT;
+    ISaleHybridToken SHBT;
 
     uint internal constant duration = 6500 * 5; // blocks
 
@@ -26,7 +26,7 @@ contract Presale is Ownable {
 
     constructor(address _USDC, address _SHBT) public {
         USDC = IERC20(_USDC);
-        SHBT = IServiceHybridToken(_SHBT);
+        SHBT = ISaleHybridToken(_SHBT);
     }
 
     function start() external onlyOwner {
@@ -34,7 +34,7 @@ contract Presale is Ownable {
     }
 
     function burn() external onlyOwner {
-        require(block.number > startBlock + duration, "Prensale: INVALID_DATE");
+        require(block.number > startBlock + duration, "Presale: INVALID_DATE");
         uint unreleasedAmount = totalLimit.sub(SHBT.balanceOf(address(this)));
         SHBT.burnFor(address(this), unreleasedAmount);
     }
@@ -43,19 +43,36 @@ contract Presale is Ownable {
         USDC.transfer(_to, _amount);
     }
 
-    function _buy(uint _amountUSDC) internal {
-        require(block.number <= startBlock + duration, "Prensale: INVALID_DATE");
-        require(_amountUSDC > 0, "Prensale: ZERO_AMOUNT_USDC");
-        // TODO: Add return change for over limit instead of revert 
-        assert(_amountUSDC <= purchasedLimit.sub(purchasedAmountOf[msg.sender]));
-        uint amountSHBT = _amountUSDC.div(rate).mul(PresaleConstants.HONE);
-        USDC.approve(address(this), _amountUSDC);
-        // TODO: This check probably could be removed for optimization
-        uint allowance = USDC.allowance(msg.sender, address(this));
-        require(allowance >= _amountUSDC, "Prensale: ALLOWANCE");
-        USDC.transferFrom(msg.sender, address(this), _amountUSDC);
-        SHBT.transfer(msg.sender, amountSHBT);
+    function buy(uint _amountUSDC) external {
+        require(block.number <= startBlock + duration, "Presale: INVALID_DATE");
+        require(_amountUSDC > 0, "Presale: ZERO_AMOUNT_USDC");
+        uint availableAmountSHBT = purchasedLimit.sub(purchasedAmountOf[msg.sender]);
+        uint amountSHBT = _amountUSDC.mul(PresaleConstants.ONE_HBT_IN_WEI).div(rate);
+        if (amountSHBT > availableAmountSHBT) {
+            _amountUSDC = amountSHBT.sub(availableAmountSHBT).mul(rate);
+            amountSHBT = availableAmountSHBT;
+        }
+        require(_transferFromERC20(SHBT, msg.sender, address(this), _amountUSDC), "Presale: TRANSFER_FROM");
+        require(_sendERC20(SHBT, msg.sender, amountSHBT), "Presale: SEND_ERC20");
         purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(amountSHBT);
         emit Sold(msg.sender, amountSHBT);
+    }
+
+    function _sendERC20(IERC20 _token, address _to, uint256 _amount) internal returns (bool) {
+        (bool callSuccess, bytes memory callReturnValueEncoded) = address(_token).call(
+            abi.encodeWithSignature("transfer(address,uint256)", _to, _amount)
+        );
+        // `transfer` method may return (bool) or nothing.
+        bool returnedSuccess = callReturnValueEncoded.length == 0 || abi.decode(callReturnValueEncoded, (bool));
+        return callSuccess && returnedSuccess;
+    }
+
+    function _transferFromERC20(IERC20 _token, address _from, address _to, uint256 _amount) internal returns (bool) {
+        (bool callSuccess, bytes memory callReturnValueEncoded) = address(_token).call(
+            abi.encodeWithSignature("transferFrom(address,address,uint256)", _from, _to, _amount)
+        );
+        // `transferFrom` method may return (bool) or nothing.
+        bool returnedSuccess = callReturnValueEncoded.length == 0 || abi.decode(callReturnValueEncoded, (bool));
+        return callSuccess && returnedSuccess;
     }
 }

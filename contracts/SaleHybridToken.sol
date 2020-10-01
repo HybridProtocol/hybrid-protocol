@@ -5,18 +5,15 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../libraries/PresaleConstants.sol";
 import "../utils/Whitelist.sol";
 
-contract ServiceHybridToken is ERC20, Ownable, Whitelist {
 
-    string internal constant NAME = "Service Hybrid Token";
+contract SaleHybridToken is ERC20, Ownable, Whitelist {
+
+    string internal constant NAME = "Sale Hybrid Token";
     string internal constant SYMBOL = "sHBT";
 
-    uint internal alphaTokensaleLimit = PresaleConstants.ALPHA_PRESALE_LIMIT; // 3% of total supply
-    uint internal betaTokensaleLimit = PresaleConstants.BETA_PRESALE_LIMIT;   // 5% of total supply
-    uint internal gammaTokensaleLimit = PresaleConstants.GAMMA_PRESALE_LIMIT; // 4% of total supply
-
-    address internal alphaTokensale;
-    address internal betaTokensale;
-    address internal gammaTokensale;
+    address private alphaTokensale;
+    address private betaTokensale;
+    address private gammaTokensale;
 
     mapping(address => bool) isBurnedFor;
 
@@ -28,11 +25,11 @@ contract ServiceHybridToken is ERC20, Ownable, Whitelist {
         );
 
         if (_contract == alphaTokensale) {
-            require(_amount <= alphaTokensaleLimit);
+            require(_amount <= PresaleConstants.ALPHA_PRESALE_LIMIT);
         } else if (_contract == betaTokensale) {
-            require(_amount <= betaTokensaleLimit);
+            require(_amount <= PresaleConstants.BETA_PRESALE_LIMIT);
         } else if (_contract == gammaTokensale) {
-            require(_amount <= gammaTokensaleLimit);
+            require(_amount <= PresaleConstants.GAMMA_PRESALE_LIMIT);
         }
         _;
     }
@@ -48,16 +45,16 @@ contract ServiceHybridToken is ERC20, Ownable, Whitelist {
         betaTokensale = _betaTokensale;
         gammaTokensale = _gammaTokensale;
 
-        _mint(_alphaTokensale, alphaTokensaleLimit);
-        _mint(_betaTokensale, betaTokensaleLimit);
-        _mint(_gammaTokensale, gammaTokensaleLimit);
+        _mint(_alphaTokensale, PresaleConstants.ALPHA_PRESALE_LIMIT);
+        _mint(_betaTokensale, PresaleConstants.BETA_PRESALE_LIMIT);
+        _mint(_gammaTokensale, PresaleConstants.GAMMA_PRESALE_LIMIT);
     }
 
     function burnFor(
         address _presale,
         uint _amount)
     external onlyWhitelisted onlyAvailableAmount(_presale, _amount) {
-        require(!isBurnedFor[_presale], "ServiceHybridToken: ONLY_ONCE_BURN");
+        require(!isBurnedFor[_presale], "SaleHybridToken: ONLY_ONCE_BURN");
         _burn(msg.sender, _amount);
         isBurnedFor[_presale] = true;
     }

@@ -1,5 +1,5 @@
 {
-  "name": "solidity-ts-dev-stack-example",
+  "name": "hybrid-protocol",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
@@ -21,19 +21,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rhlsthrm/solidity-ts-dev-stack-example.git"
+    "url": "git+https://github.com/HybridProtocol/hybrid-protocol"
   },
-  "author": "rhlsthrm",
+  "author": "nbailo",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rhlsthrm/solidity-ts-dev-stack-example/issues"
+    "url": "https://github.com/HybridProtocol/hybrid-protocol/issues"
   },
-  "homepage": "https://github.com/rhlsthrm/solidity-ts-dev-stack-example#readme",
+  "homepage": "https://github.com/HybridProtocol/hybrid-protocol#readme",
   "devDependencies": {
     "@nomiclabs/buidler": "^1.3.4",
     "@nomiclabs/buidler-ethers": "^1.3.3",
     "@nomiclabs/buidler-etherscan": "^1.3.3",
     "@nomiclabs/buidler-waffle": "^1.3.5",
+    "@openzeppelin/contracts": "^3.1.0",
+    "@openzeppelin/upgrades": "^2.8.0",
     "@typechain/ethers-v4": "^1.0.0",
     "@typechain/truffle-v4": "^2.0.2",
     "@typechain/truffle-v5": "^2.0.2",
@@ -41,26 +43,24 @@
     "@types/chai": "^4.2.12",
     "@types/mocha": "^7.0.2",
     "@types/node": "^14.6.0",
+    "@typescript-eslint/eslint-plugin": "^3.1.0",
+    "@typescript-eslint/parser": "^3.1.0",
     "buidler-typechain": "0.1.1",
     "chai": "^4.2.0",
-    "ethereum-waffle": "^2.5.1",
-    "ethers": "^4.0.47",
-    "husky": "^4.2.5",
-    "solidity-coverage": "^0.7.5",
-    "ts-generator": "0.0.8",
-    "ts-node": "^8.10.2",
-    "typechain": "^2.0.0",
-    "typescript": "^3.9.7",
-    "@openzeppelin/contracts": "^3.1.0",
-    "@openzeppelin/upgrades": "^2.8.0",
+    "dotenv": "^8.2.0",
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.3",
     "eslint-plugin-react": "^7.20.0",
-    "@typescript-eslint/eslint-plugin": "^3.1.0",
-    "@typescript-eslint/parser": "^3.1.0",
+    "ethereum-waffle": "^2.5.1",
+    "ethers": "^4.0.47",
+    "husky": "^4.2.5",
     "prettier": "^2.0.5",
     "pretty-quick": "^2.0.1",
-    "dotenv": "^8.2.0"
+    "solidity-coverage": "^0.7.5",
+    "ts-generator": "0.0.8",
+    "ts-node": "^8.10.2",
+    "typechain": "^2.0.0",
+    "typescript": "^3.9.7"
   }
 }
