@@ -18,12 +18,15 @@ contract SaleHybridToken is ERC20, Ownable, Whitelist {
     mapping(address => bool) isBurnedFor;
 
 
-    modifier onlyAvailableAmount(address _contract, uint _amount) {
+    modifier onlyFor(address _contract) {
         require(_contract == alphaTokensale ||
-            _contract == betaTokensale ||
-            _contract == gammaTokensale
+                _contract == betaTokensale  ||
+                _contract == gammaTokensale
         );
+        _;
+    }
 
+    modifier onlyAvailableAmount(address _contract, uint _amount) {
         if (_contract == alphaTokensale) {
             require(_amount <= PresaleConstants.ALPHA_PRESALE_LIMIT);
         } else if (_contract == betaTokensale) {
@@ -52,8 +55,8 @@ contract SaleHybridToken is ERC20, Ownable, Whitelist {
 
     function burnFor(
         address _presale,
-        uint _amount)
-    external onlyWhitelisted onlyAvailableAmount(_presale, _amount) {
+        uint _amount
+    ) external onlyWhitelisted onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
         require(!isBurnedFor[_presale], "SaleHybridToken: ONLY_ONCE_BURN");
         _burn(msg.sender, _amount);
         isBurnedFor[_presale] = true;
