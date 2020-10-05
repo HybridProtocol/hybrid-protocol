@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.6.6;
 
+import "../../interfaces/ISaleHybridToken.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../libraries/PresaleConstants.sol";
-import "../../interfaces/ISaleHybridToken.sol";
+import "../../libraries/SafeTransfer.sol";
 
 
 contract Presale is Ownable {
@@ -19,6 +20,7 @@ contract Presale is Ownable {
     uint internal startBlock;
     uint internal totalLimit;
     uint internal purchasedLimit;
+    uint internal sold;
 
     mapping(address => uint) private purchasedAmountOf;
 
@@ -52,27 +54,19 @@ contract Presale is Ownable {
             _amountUSDC = amountSHBT.sub(availableAmountSHBT).mul(rate);
             amountSHBT = availableAmountSHBT;
         }
-        require(_transferFromERC20(SHBT, msg.sender, address(this), _amountUSDC), "Presale: TRANSFER_FROM");
-        require(_sendERC20(SHBT, msg.sender, amountSHBT), "Presale: SEND_ERC20");
+        require(SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC), "Presale: TRANSFER_FROM");
+        require(SafeTransfer.sendERC20(address(SHBT), msg.sender, amountSHBT), "Presale: SEND_ERC20");
         purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(amountSHBT);
+        sold = sold.add(amountSHBT);
         emit Sold(msg.sender, amountSHBT);
     }
 
-    function _sendERC20(IERC20 _token, address _to, uint256 _amount) internal returns (bool) {
-        (bool callSuccess, bytes memory callReturnValueEncoded) = address(_token).call(
-            abi.encodeWithSignature("transfer(address,uint256)", _to, _amount)
-        );
-        // `transfer` method may return (bool) or nothing.
-        bool returnedSuccess = callReturnValueEncoded.length == 0 || abi.decode(callReturnValueEncoded, (bool));
-        return callSuccess && returnedSuccess;
+    function purchasedAmount(address _account) external view returns (uint) {
+        return purchasedAmountOf[_account];
     }
 
-    function _transferFromERC20(IERC20 _token, address _from, address _to, uint256 _amount) internal returns (bool) {
-        (bool callSuccess, bytes memory callReturnValueEncoded) = address(_token).call(
-            abi.encodeWithSignature("transferFrom(address,address,uint256)", _from, _to, _amount)
-        );
-        // `transferFrom` method may return (bool) or nothing.
-        bool returnedSuccess = callReturnValueEncoded.length == 0 || abi.decode(callReturnValueEncoded, (bool));
-        return callSuccess && returnedSuccess;
+    function totalSold() external view returns (uint) {
+        return sold;
     }
+
 }
