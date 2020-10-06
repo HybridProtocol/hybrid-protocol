@@ -20,7 +20,8 @@ contract Presale is Ownable {
     uint internal startBlock;
     uint internal totalLimit;
     uint internal purchasedLimit;
-    uint internal sold;
+
+    uint public totalSold;
 
     mapping(address => uint) private purchasedAmountOf;
 
@@ -57,16 +58,11 @@ contract Presale is Ownable {
         require(SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC), "Presale: TRANSFER_FROM");
         require(SafeTransfer.sendERC20(address(SHBT), msg.sender, amountSHBT), "Presale: SEND_ERC20");
         purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(amountSHBT);
-        sold = sold.add(amountSHBT);
+        totalSold = totalSold.add(amountSHBT);
         emit Sold(msg.sender, amountSHBT);
     }
 
     function purchasedAmount(address _account) external view returns (uint) {
         return purchasedAmountOf[_account];
     }
-
-    function totalSold() external view returns (uint) {
-        return sold;
-    }
-
 }

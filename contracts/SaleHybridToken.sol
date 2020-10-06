@@ -21,18 +21,19 @@ contract SaleHybridToken is ERC20, Ownable, Whitelist {
     modifier onlyFor(address _contract) {
         require(_contract == alphaPresale ||
                 _contract == betaPresale  ||
-                _contract == gammaPresale
+                _contract == gammaPresale,
+                "SaleHybridToken: ONLY_PRESALE_CONTRACTS"
         );
         _;
     }
 
     modifier onlyAvailableAmount(address _contract, uint _amount) {
         if (_contract == alphaPresale) {
-            require(_amount <= PresaleConstants.ALPHA_PRESALE_LIMIT);
+            require(_amount <= PresaleConstants.ALPHA_PRESALE_LIMIT, "SaleHybridToken: ALPHA_PRESALE_LIMIT");
         } else if (_contract == betaPresale) {
-            require(_amount <= PresaleConstants.BETA_PRESALE_LIMIT);
+            require(_amount <= PresaleConstants.BETA_PRESALE_LIMIT, "SaleHybridToken: BETA_PRESALE_LIMIT");
         } else if (_contract == gammaPresale) {
-            require(_amount <= PresaleConstants.GAMMA_PRESALE_LIMIT);
+            require(_amount <= PresaleConstants.GAMMA_PRESALE_LIMIT, "SaleHybridToken: GAMMA_PRESALE_LIMIT");
         }
         _;
     }

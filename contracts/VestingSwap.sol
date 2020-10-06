@@ -12,29 +12,28 @@ import "../libraries/PresaleConstants.sol";
 contract VestingSwap is Ownable {
     using SafeMath for uint256;
 
-    bytes32 public alphaPresale = keccak256("alphaPresale");
-    bytes32 public betaPresale = keccak256("betaPresale");
-    bytes32 public gammaPresale = keccak256("gammaPresale");
+    address private alphaPresale;
+    address private betaPresale;
+    address private gammaPresale;
 
     uint32 private constant SECONDS_PER_DAY = 24 * 60 * 60;
     uint32 private constant SECONDS_PER_MONTH = SECONDS_PER_DAY * 30;
 
     address private HBT;
 
-    struct swapInfo {
-        address addr;
-        uint limit;
+    struct SwapInfo {
+        uint sold;
         uint[] vesting;
         uint start;
-        uint swaped;
+        uint swapped;
     }
 
-    mapping(bytes32 => swapInfo) public swap;
-    mapping(address => uint) public swapedAmountOf;
+    mapping(address => SwapInfo) public swap;
+    mapping(address => uint) public swappedAmountOf;
 
     event Swap(address account, uint amount);
 
-    modifier isStarted(bytes32 _presale) {
+    modifier isStarted(address _presale) {
         require(swap[_presale].start > 0);
         _;
     }
@@ -42,13 +41,13 @@ contract VestingSwap is Ownable {
     constructor(address _alphaPresale, address _betaPresale, address _gammaPresale, address _HBT) public {
         HBT = _HBT;
 
-        swap[alphaPresale].addr = _alphaPresale;
-        swap[betaPresale].addr = _betaPresale;
-        swap[gammaPresale].addr = _gammaPresale;
+        alphaPresale = _alphaPresale;
+        betaPresale = _betaPresale;
+        gammaPresale = _gammaPresale;
 
-        swap[alphaPresale].limit = IPresale(swap[alphaPresale].addr).totalSold();
-        swap[betaPresale].limit = IPresale(swap[betaPresale].addr).totalSold();
-        swap[gammaPresale].limit = IPresale(swap[gammaPresale].addr).totalSold();
+        swap[alphaPresale].sold = IPresale(alphaPresale).totalSold();
+        swap[betaPresale].sold = IPresale(betaPresale).totalSold();
+        swap[gammaPresale].sold = IPresale(gammaPresale).totalSold();
 
         _initVestingData();
     }
@@ -77,22 +76,27 @@ contract VestingSwap is Ownable {
         _swap(gammaPresale, _amount);
     }
 
-    function availableAmountFor(bytes32 _presale) public view returns (uint) {
-        uint256 currentMonth = now.sub(swap[_presale].start).div(SECONDS_PER_MONTH);
+    function availableAmountFor(address _presale) public view returns (uint) {
         uint256 totalUnlockedAmount;
-        for(uint8 i = 0; i <= currentMonth; i++ ) {
-            totalUnlockedAmount = totalUnlockedAmount.add(swap[_presale].vesting[i]);
+        uint256 monthsElapsed = now.sub(swap[_presale].start).div(SECONDS_PER_MONTH);
+        if (monthsElapsed > 6) {
+            totalUnlockedAmount = swap[_presale].sold;
+        } else {
+            for (uint8 i = 0; i <= monthsElapsed; i++ ) {
+                totalUnlockedAmount = totalUnlockedAmount.add(swap[_presale].vesting[i]);
+            }
         }
-        return totalUnlockedAmount.sub(swap[_presale].swaped);
+        return totalUnlockedAmount.sub(swap[_presale].swapped);
     }
 
-    function _swap(bytes32 _presale, uint _amount) private {
-        uint purchased = IPresale(swap[_presale].addr).purchasedAmount(msg.sender);
-        require(_amount <= purchased.sub(swapedAmountOf[msg.sender]), "VestingSwap: USER_LIMIT");
-        require(_amount <= swap[_presale].limit.sub(swap[_presale].swaped), "VestingSwap: VESTING_LIMIT");
-        ISaleHybridToken(swap[_presale].addr).burnFor(msg.sender, _amount);
+    function _swap(address _presale, uint _amount) private {
+        uint purchased = IPresale(_presale).purchasedAmount(msg.sender);
+        require(_amount <= purchased.sub(swappedAmountOf[msg.sender]), "VestingSwap: USER_LIMIT");
+        uint availableAmount = availableAmountFor(_presale);
+        require(_amount <= availableAmount.sub(swap[_presale].swapped), "VestingSwap: VESTING_LIMIT");
+        ISaleHybridToken(_presale).burnFor(msg.sender, _amount);
         require(SafeTransfer.sendERC20(address(HBT), msg.sender, _amount), "VestingSwap: SEND_ERC20");
-        swapedAmountOf[msg.sender] = swapedAmountOf[msg.sender].add(_amount);
+        swappedAmountOf[msg.sender] = swappedAmountOf[msg.sender].add(_amount);
         emit Swap(msg.sender, _amount);
     }
 
@@ -101,17 +105,12 @@ contract VestingSwap is Ownable {
         uint8[7] memory betaPercentages  = [10, 15, 15, 15, 15, 15, 15];
         uint8[7] memory gammaPercentages = [10, 15, 15, 15, 15, 15, 15];
 
-        _expandToAmounts(alphaPresale, alphaPercentages);
-        _expandToAmounts(betaPresale, betaPercentages);
-        _expandToAmounts(gammaPresale, gammaPercentages);
-    }
-
-    function _expandToAmounts(bytes32 _presale, uint8[7] memory _percentages) internal returns (uint256[] memory) {
-        for(uint i = 0; i < _percentages.length; i++) {
-            if (_percentages[i] != 0) {
-                uint sold = IPresale(swap[_presale].addr).totalSold();
-                swap[_presale].vesting[i] = sold.mul(_percentages[i]).div(100);
+        for(uint i = 0; i < 7; i++) {
+            if (alphaPercentages[i] != 0) {
+                swap[alphaPresale].vesting[i] = swap[alphaPresale].sold.mul(alphaPercentages[i]).div(100);
             }
+            swap[betaPresale].vesting[i] = swap[betaPresale].sold.mul(betaPercentages[i]).div(100);
+            swap[gammaPresale].vesting[i] = swap[gammaPresale].sold.mul(gammaPercentages[i]).div(100);
         }
     }
 }
