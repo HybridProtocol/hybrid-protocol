@@ -11,28 +11,29 @@ contract SaleHybridToken is ERC20, Ownable, Whitelist {
     string internal constant NAME = "Sale Hybrid Token";
     string internal constant SYMBOL = "sHBT";
 
-    address private alphaTokensale;
-    address private betaTokensale;
-    address private gammaTokensale;
+    address private alphaPresale;
+    address private betaPresale;
+    address private gammaPresale;
 
     mapping(address => bool) isBurnedFor;
 
 
     modifier onlyFor(address _contract) {
-        require(_contract == alphaTokensale ||
-                _contract == betaTokensale  ||
-                _contract == gammaTokensale
+        require(_contract == alphaPresale ||
+                _contract == betaPresale  ||
+                _contract == gammaPresale,
+                "SaleHybridToken: ONLY_PRESALE_CONTRACTS"
         );
         _;
     }
 
     modifier onlyAvailableAmount(address _contract, uint _amount) {
-        if (_contract == alphaTokensale) {
-            require(_amount <= PresaleConstants.ALPHA_PRESALE_LIMIT);
-        } else if (_contract == betaTokensale) {
-            require(_amount <= PresaleConstants.BETA_PRESALE_LIMIT);
-        } else if (_contract == gammaTokensale) {
-            require(_amount <= PresaleConstants.GAMMA_PRESALE_LIMIT);
+        if (_contract == alphaPresale) {
+            require(_amount <= PresaleConstants.ALPHA_PRESALE_LIMIT, "SaleHybridToken: ALPHA_PRESALE_LIMIT");
+        } else if (_contract == betaPresale) {
+            require(_amount <= PresaleConstants.BETA_PRESALE_LIMIT, "SaleHybridToken: BETA_PRESALE_LIMIT");
+        } else if (_contract == gammaPresale) {
+            require(_amount <= PresaleConstants.GAMMA_PRESALE_LIMIT, "SaleHybridToken: GAMMA_PRESALE_LIMIT");
         }
         _;
     }
@@ -40,17 +41,17 @@ contract SaleHybridToken is ERC20, Ownable, Whitelist {
     constructor() ERC20(NAME, SYMBOL) public {}
 
     function mintPresale(
-        address _alphaTokensale,
-        address _betaTokensale,
-        address _gammaTokensale
+        address _alphaPresale,
+        address _betaPresale,
+        address _gammaPresale
     ) external onlyOwner {
-        alphaTokensale = _alphaTokensale;
-        betaTokensale = _betaTokensale;
-        gammaTokensale = _gammaTokensale;
+        alphaPresale = _alphaPresale;
+        betaPresale = _betaPresale;
+        gammaPresale = _gammaPresale;
 
-        _mint(_alphaTokensale, PresaleConstants.ALPHA_PRESALE_LIMIT);
-        _mint(_betaTokensale, PresaleConstants.BETA_PRESALE_LIMIT);
-        _mint(_gammaTokensale, PresaleConstants.GAMMA_PRESALE_LIMIT);
+        _mint(_alphaPresale, PresaleConstants.ALPHA_PRESALE_LIMIT);
+        _mint(_betaPresale, PresaleConstants.BETA_PRESALE_LIMIT);
+        _mint(_gammaPresale, PresaleConstants.GAMMA_PRESALE_LIMIT);
     }
 
     function burnFor(
