@@ -18,8 +18,7 @@ contract IndexHybridToken is ERC20, Whitelist {
 
     Asset[] public portfolio;
 
-    event AssetAdded(bytes8 asset, uint16 weight);
-    event CompositionUpdated();
+    event CompositionUpdated(bytes8[] assets, uint16[] weight);
 
     uint256 public immutable maxMintedSupply;
 
@@ -42,9 +41,9 @@ contract IndexHybridToken is ERC20, Whitelist {
         delete portfolio;
         for (uint i = 0; i < portfolio.length; i++) {
             totalWeights += _weights[i];
-            _addAsset(_assets[i], _weights[i]);
+            portfolio.push(Asset(_assets[i], _weights[i]));
         }
-        emit CompositionUpdated();
+        emit CompositionUpdated(_assets, _weights);
     }
 
     function mintAmount(address[] calldata _accounts, uint256 _amount) external onlyWhitelisted {
@@ -60,10 +59,5 @@ contract IndexHybridToken is ERC20, Whitelist {
             _mint(_accounts[i], _amounts[i]);
         }
         require(totalSupply() <= maxMintedSupply, "IndexHybridToken: MAX_MINTED_SUPPLY_LIMIT");
-    }
-
-    function _addAsset(bytes8 _symbol, uint16 _weight) private onlyWhitelisted {
-        portfolio.push(Asset(_symbol, _weight));
-        emit AssetAdded(_symbol, _weight);
     }
 }
