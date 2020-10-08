@@ -6,7 +6,6 @@ import "./Presale.sol";
 
 
 contract AlphaPresale is Presale {
-    using SafeMath for uint256;
 
     constructor(address _USDC, address _sHBT) public Presale(_USDC, _sHBT) {
         rate = PresaleConstants.ALPHA_PRESALE_RATE;              // 0.15 USDC
