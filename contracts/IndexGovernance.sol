@@ -5,14 +5,16 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./IndexHybridToken.sol";
 import "../interfaces/IIndexHybridToken.sol";
 import "../interfaces/IHybridToken.sol";
-import "../utils/Whitelist.sol";
+import "../utils/Maintenance.sol";
 import "../libraries/SafeTransfer.sol";
 
-contract IndexGovernance is Whitelist {
+contract IndexGovernance is Maintenance {
     using SafeMath for uint256;
 
     address public indexToken;
     address public stakingToken;
+    uint public pros;
+    uint public cons;
 
     struct Proposal {
         bytes8[] assets;
@@ -33,7 +35,7 @@ contract IndexGovernance is Whitelist {
 
     event ProposalCreated(bytes8[] assets, uint16[] weights, uint votingDuration, address initiator);
     event Voted(address voter, uint amount, bool decision);
-    event ProposalClosed(bool accepted, bytes8[] assets, uint16[] weights, uint total, uint diff, address initiator);
+    event ProposalClosed(bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator);
 
     constructor(address _indexToken) public {
         indexToken = _indexToken;
@@ -43,8 +45,9 @@ contract IndexGovernance is Whitelist {
         bytes8[] memory _assets, 
         uint16[] memory _weights,
         uint _duration
-    ) public onlyWhitelisted notInProgress {
+    ) public onlyMaintainers {
         require(_assets.length == _weights.length, "IndexGovernance: INVALID_LENGTH");
+        assert(pros == 0 && cons == 0);
         uint totalWeights;
         for (uint i = 0; i < _weights.length; i++) {
             totalWeights += _weights[i];
@@ -54,47 +57,32 @@ contract IndexGovernance is Whitelist {
         emit ProposalCreated(_assets, _weights, _duration, msg.sender);
     }
 
-    function vote(uint _amount, bool _decision) public inProgress {
+    function vote(uint _amount, bool _decision) public {
+        require(proposal.votingStart.add(proposal.votingDuration) > now, "IndexGovernance: VOTING_NOT_IN_PROGRESS");
         require(SafeTransfer.transferFromERC20(address(stakingToken), msg.sender, address(this), _amount), "IndexGovernance: TRANSFER_FROM");
+        if (_decision) {
+            pros++;
+        } else {
+            cons++;
+        }
         votes.push(Vote(msg.sender, _amount, _decision));
         emit Voted(msg.sender, _amount, _decision);
     }
 
-    function finalize() public inProgress {
-        uint pros;
-        uint cons;
-
-        for (uint i = 0; i < votes.length; i++) {
-            if (votes[i].decision) {
-                pros.add(votes[i].amount);
-            } else {
-                cons.add(votes[i].amount);
-            }
-        }
-
+    function finalize() public {
+        require(proposal.votingStart.add(proposal.votingDuration) < now, "IndexGovernance: VOTING_IN_PROGRESS");
         if (pros > cons) {
             IIndexHybridToken(indexToken).updateComposition(proposal.assets, proposal.weights);
-            emit ProposalClosed(true, proposal.assets, proposal.weights, pros.add(cons), pros.sub(cons), msg.sender);
-        } else {
-            emit ProposalClosed(false, proposal.assets, proposal.weights, pros.add(cons), cons.sub(pros), msg.sender);
         }
-
         for (uint i = 0; i < votes.length; i++) {
             require(SafeTransfer.sendERC20(address(stakingToken), votes[i].voter, votes[i].amount), "IndexGovernance: SEND_ERC20");
         }
+        emit ProposalClosed(pros > cons, proposal.assets, proposal.weights, pros, cons, msg.sender);
 
         delete proposal;
         delete votes;
-    }
-
-    modifier inProgress() {
-        require(proposal.votingStart.add(proposal.votingDuration) > now, "IndexGovernance: VOTING_NOT_IN_PROGRESS");
-        _;
-    }
-
-    modifier notInProgress() {
-        require(proposal.votingStart.add(proposal.votingDuration) < now, "IndexGovernance: VOTING_IN_PROGRESS");
-        _;
+        delete pros;
+        delete cons;
     }
 
 }

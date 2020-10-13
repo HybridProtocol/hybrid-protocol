@@ -3,10 +3,10 @@ pragma solidity >=0.6.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../libraries/PresaleConstants.sol";
-import "../utils/Whitelist.sol";
+import "../utils/Maintenance.sol";
 
 
-contract SaleHybridToken is ERC20, Ownable, Whitelist {
+contract SaleHybridToken is ERC20, Ownable, Maintenance {
 
     string internal constant NAME = "Sale Hybrid Token";
     string internal constant SYMBOL = "sHBT";
@@ -57,7 +57,7 @@ contract SaleHybridToken is ERC20, Ownable, Whitelist {
     function burnFor(
         address _presale,
         uint _amount
-    ) external onlyWhitelisted onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
+    ) external onlyMaintainers onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
         require(!isBurnedFor[_presale], "SaleHybridToken: ONLY_ONCE_BURN");
         _burn(msg.sender, _amount);
         isBurnedFor[_presale] = true;
