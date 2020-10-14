@@ -42,7 +42,7 @@ contract IndexGovernance is Maintenance {
         uint _duration
     ) public onlyMaintainers {
         require(_assets.length == _weights.length, "IndexGovernance: INVALID_LENGTH");
-        require(_duration <= 6500);
+        require(_duration <= 3 * 6500 && _duration > 6500, "IndexGovernance: DURATION_INVALID");
         if (proposal.deadline != 0) {
             finalize();
         }
