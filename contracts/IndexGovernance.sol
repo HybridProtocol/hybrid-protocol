@@ -20,8 +20,7 @@ contract IndexGovernance is Maintenance {
         uint id;
         bytes8[] assets;
         uint16[] weights;
-        uint creationBlock;
-        uint votingDuration;
+        uint deadline;
         address initiator;
         uint pros;
         uint cons;
@@ -44,22 +43,22 @@ contract IndexGovernance is Maintenance {
     ) public onlyMaintainers {
         require(_assets.length == _weights.length, "IndexGovernance: INVALID_LENGTH");
         require(_duration <= 6500);
+        if (proposal.deadline != 0) {
+            finalize();
+        }
 
         uint totalWeights;
         for (uint i = 0; i < _weights.length; i++) {
             totalWeights += _weights[i];
         }
         require(totalWeights == 10000, "IndexGovernance: TOTAL_WEIGHTS");
-        if (proposal.creationBlock != 0) {
-            finalize();
-        }
 
-        proposal = Proposal(++lastProposalId, _assets, _weights, block.number, _duration, msg.sender, 0, 0);
+        proposal = Proposal(++lastProposalId, _assets, _weights, block.number.add(_duration), msg.sender, 0, 0);
         emit ProposalCreated(_assets, _weights, _duration, msg.sender);
     }
 
     function vote(uint _amount, bool _decision) public {
-        require(proposal.creationBlock.add(proposal.votingDuration) > block.number, "IndexGovernance: VOTING_NOT_IN_PROGRESS");
+        require(proposal.deadline > block.number, "IndexGovernance: VOTING_NOT_IN_PROGRESS");
         require(SafeTransfer.transferFromERC20(address(stakingToken), msg.sender, address(this), _amount), "IndexGovernance: TRANSFER_FROM");
         if (_decision) {
             proposal.pros = proposal.pros.add(_amount);
@@ -71,7 +70,7 @@ contract IndexGovernance is Maintenance {
     }
 
     function finalize() public {
-        require(proposal.creationBlock.add(proposal.votingDuration) < block.number, "IndexGovernance: VOTING_IN_PROGRESS");
+        require(proposal.deadline < block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         if (proposal.pros > proposal.cons) {
             IIndexHybridToken(indexToken).updateComposition(proposal.assets, proposal.weights);
         }
@@ -81,7 +80,7 @@ contract IndexGovernance is Maintenance {
 
     function claimFunds(uint _amount, uint _proposalId) public {
         if (proposal.id == _proposalId) {
-            require(proposal.creationBlock.add(proposal.votingDuration) > block.number, "IndexGovernance: VOTING_IN_PROGRESS");
+            require(proposal.deadline > block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         }
         votesOfUserByProposalId[_proposalId][msg.sender] = votesOfUserByProposalId[_proposalId][msg.sender].sub(_amount);
         require(SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount), "IndexGovernance: SEND_ERC20");
