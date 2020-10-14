@@ -9,37 +9,37 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev The Whitelist contract has a whitelist of addresses, and provides basic authorization control functions.
  * @dev This simplifies the implementation of "user permissions".
  */
-contract Whitelist is Ownable {
-    mapping(address => bool) public whitelist;
+contract Maintenance is Ownable {
+    mapping(address => bool) public maintainers;
 
-    event WhitelistedAddressAdded(address addr);
+    event MaintainerAddressAdded(address addr);
     event WhitelistedAddressRemoved(address addr);
 
 
-    modifier onlyWhitelisted() {
-        require(whitelist[msg.sender]);
+    modifier onlyMaintainers() {
+        require(maintainers[msg.sender]);
         _;
     }
 
-    function addAddressToWhitelist(address addr) onlyOwner public returns(bool success) {
-        if (!whitelist[addr]) {
-            whitelist[addr] = true;
-            WhitelistedAddressAdded(addr);
+    function addAddressToMaintainers(address addr) onlyOwner public returns(bool success) {
+        if (!maintainers[addr]) {
+            maintainers[addr] = true;
+            MaintainerAddressAdded(addr);
             success = true; 
         }
     }
 
-    function addAddressesToWhitelist(address[] memory addrs) onlyOwner public returns(bool success) {
+    function addAddressesToMainteiners(address[] memory addrs) onlyOwner public returns(bool success) {
         for (uint256 i = 0; i < addrs.length; i++) {
-            if (addAddressToWhitelist(addrs[i])) {
+            if (addAddressToMaintainers(addrs[i])) {
                 success = true;
             }
         }
     }
 
-    function removeAddressFromWhitelist(address addr) onlyOwner public returns(bool success) {
-        if (whitelist[addr]) {
-            whitelist[addr] = false;
+    function removeAddressFromMaintainers(address addr) onlyOwner public returns(bool success) {
+        if (maintainers[addr]) {
+            maintainers[addr] = false;
             WhitelistedAddressRemoved(addr);
             success = true;
         }
@@ -47,7 +47,7 @@ contract Whitelist is Ownable {
 
     function removeAddressesFromWhitelist(address[] memory addrs) onlyOwner public returns(bool success) {
         for (uint256 i = 0; i < addrs.length; i++) {
-            if (removeAddressFromWhitelist(addrs[i])) {
+            if (removeAddressFromMaintainers(addrs[i])) {
                 success = true;
             }
         }
