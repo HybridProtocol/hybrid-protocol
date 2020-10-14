@@ -13,25 +13,21 @@ contract IndexGovernance is Maintenance {
 
     address public indexToken;
     address public stakingToken;
-    uint public pros;
-    uint public cons;
+    uint lastProposalId;
+    mapping (uint => mapping (address => uint)) public votesOfUserByProposalId;
 
     struct Proposal {
+        uint id;
         bytes8[] assets;
         uint16[] weights;
+        uint creationBlock;
         uint votingDuration;
-        uint votingStart;
         address initiator;
-    }
-
-    struct Vote {
-        address voter;
-        uint amount;
-        bool decision;
+        uint pros;
+        uint cons;
     }
 
     Proposal public proposal;
-    Vote[] private votes;
 
     event ProposalCreated(bytes8[] assets, uint16[] weights, uint votingDuration, address initiator);
     event Voted(address voter, uint amount, bool decision);
@@ -47,42 +43,48 @@ contract IndexGovernance is Maintenance {
         uint _duration
     ) public onlyMaintainers {
         require(_assets.length == _weights.length, "IndexGovernance: INVALID_LENGTH");
-        assert(pros == 0 && cons == 0);
+        require(_duration <= 6500);
+
         uint totalWeights;
         for (uint i = 0; i < _weights.length; i++) {
             totalWeights += _weights[i];
         }
         require(totalWeights == 10000, "IndexGovernance: TOTAL_WEIGHTS");
-        proposal = Proposal(_assets, _weights, _duration, now, msg.sender);
+        if (proposal.creationBlock != 0) {
+            finalize();
+        }
+
+        proposal = Proposal(++lastProposalId, _assets, _weights, block.number, _duration, msg.sender, 0, 0);
         emit ProposalCreated(_assets, _weights, _duration, msg.sender);
     }
 
     function vote(uint _amount, bool _decision) public {
-        require(proposal.votingStart.add(proposal.votingDuration) > now, "IndexGovernance: VOTING_NOT_IN_PROGRESS");
+        require(proposal.creationBlock.add(proposal.votingDuration) > block.number, "IndexGovernance: VOTING_NOT_IN_PROGRESS");
         require(SafeTransfer.transferFromERC20(address(stakingToken), msg.sender, address(this), _amount), "IndexGovernance: TRANSFER_FROM");
         if (_decision) {
-            pros++;
+            proposal.pros = proposal.pros.add(_amount);
         } else {
-            cons++;
+            proposal.cons = proposal.cons.add(_amount);
         }
-        votes.push(Vote(msg.sender, _amount, _decision));
+        votesOfUserByProposalId[proposal.id][msg.sender] = votesOfUserByProposalId[proposal.id][msg.sender].add(_amount);
         emit Voted(msg.sender, _amount, _decision);
     }
 
     function finalize() public {
-        require(proposal.votingStart.add(proposal.votingDuration) < now, "IndexGovernance: VOTING_IN_PROGRESS");
-        if (pros > cons) {
+        require(proposal.creationBlock.add(proposal.votingDuration) < block.number, "IndexGovernance: VOTING_IN_PROGRESS");
+        if (proposal.pros > proposal.cons) {
             IIndexHybridToken(indexToken).updateComposition(proposal.assets, proposal.weights);
         }
-        for (uint i = 0; i < votes.length; i++) {
-            require(SafeTransfer.sendERC20(address(stakingToken), votes[i].voter, votes[i].amount), "IndexGovernance: SEND_ERC20");
-        }
-        emit ProposalClosed(pros > cons, proposal.assets, proposal.weights, pros, cons, msg.sender);
-
+        emit ProposalClosed(proposal.pros > proposal.cons,proposal.assets,proposal.weights,proposal.pros,proposal.cons,msg.sender);
         delete proposal;
-        delete votes;
-        delete pros;
-        delete cons;
+    }
+
+    function claimFunds(uint _amount, uint _proposalId) public {
+        if (proposal.id == _proposalId) {
+            require(proposal.creationBlock.add(proposal.votingDuration) > block.number, "IndexGovernance: VOTING_IN_PROGRESS");
+        }
+        votesOfUserByProposalId[_proposalId][msg.sender] = votesOfUserByProposalId[_proposalId][msg.sender].sub(_amount);
+        require(SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount), "IndexGovernance: SEND_ERC20");
     }
 
 }
