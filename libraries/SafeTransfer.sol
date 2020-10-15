@@ -8,7 +8,7 @@ library SafeTransfer {
         );
         // `transfer` method may return (bool) or nothing.
         bool returnedSuccess = callReturnValueEncoded.length == 0 || abi.decode(callReturnValueEncoded, (bool));
-        return callSuccess && returnedSuccess;
+        require(callSuccess && returnedSuccess, "SafeTransfer: SEND_ERC20");
     }
 
     function transferFromERC20(address _token, address _from, address _to, uint256 _amount) internal returns (bool) {
@@ -17,6 +17,6 @@ library SafeTransfer {
         );
         // `transferFrom` method may return (bool) or nothing.
         bool returnedSuccess = callReturnValueEncoded.length == 0 || abi.decode(callReturnValueEncoded, (bool));
-        return callSuccess && returnedSuccess;
+        require(callSuccess && returnedSuccess,  "SafeTransfer: TRANSFER_FROM");
     }
 }

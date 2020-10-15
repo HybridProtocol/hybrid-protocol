@@ -33,6 +33,7 @@ contract Presale is Ownable {
     }
 
     function start() external onlyOwner {
+        require(startBlock == 0, "Presale: ALREADY_STARTED");
         startBlock = block.number;
     }
 
@@ -55,8 +56,8 @@ contract Presale is Ownable {
             _amountUSDC = amountSHBT.sub(availableAmountSHBT).mul(rate);
             amountSHBT = availableAmountSHBT;
         }
-        require(SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC), "Presale: TRANSFER_FROM");
-        require(SafeTransfer.sendERC20(address(SHBT), msg.sender, amountSHBT), "Presale: SEND_ERC20");
+        SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC);
+        SafeTransfer.sendERC20(address(SHBT), msg.sender, amountSHBT);
         purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(amountSHBT);
         totalSold = totalSold.add(amountSHBT);
         emit Sold(msg.sender, amountSHBT);
