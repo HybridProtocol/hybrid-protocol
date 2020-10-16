@@ -296,6 +296,20 @@ async function testPresaleContracts(
       expect(afterPresaleContractBalanceUSDC).to.be.eq(beforePresaleContractBalanceUSDC.sub(amountUSDC));
     });
   });
+
+  describe('burn', () => {
+    it('fail - not owner', async () => {
+      // check contract owner - not owner
+      await checkAddressContractOwner(aliceWallet.address, presaleContract, false);
+
+      // run method burn() - reverted
+      await expect(presaleContract.connect(aliceWallet).burn()).to.be.revertedWith(ERRORS.IS_NOT_OWNER);
+    });
+
+    it('success - owner', async () => {
+      // TODO
+    });
+  });
 }
 
 async function checkAddressContractOwner(address: string, contract: Contract, expectOwner: boolean): Promise<void> {
