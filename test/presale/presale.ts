@@ -46,7 +46,7 @@ async function testPresaleContracts(
     mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
     gasLimit: 9999999,
   });
-  const [ownerWallet, aliceWallet] = provider.getWallets();
+  const [ownerWallet, aliceWallet, bobWallet] = provider.getWallets();
   const loadFixture = createFixtureLoader(provider, [ownerWallet]);
 
   let USDC: HybridToken;
@@ -80,7 +80,9 @@ async function testPresaleContracts(
 
     // init test action
     await sHBT.mintPresale(alphaPresale.address, betaPresale.address, gammaPresale.address); // send sHBT tokens to alphaPresale, betaPresale and gammaPresale addresses
-    await USDC.transfer(aliceWallet.address, expandTo18Decimals(2000000)); // transfer USDC tokens to Alice address
+    await USDC.transfer(aliceWallet.address, expandTo18Decimals(1000000)); // transfer USDC tokens to Alice address
+    await USDC.transfer(bobWallet.address, expandTo18Decimals(2000000)); // transfer USDC tokens to Bob address
+    await USDC.transfer(presaleContract.address, expandTo18Decimals(3000000)); // transfer USDC tokens to presaleContract address
   });
 
   describe('start', () => {
@@ -200,8 +202,15 @@ async function testPresaleContracts(
       const beforeTotalSold = await presaleContract.totalSold();
       expect(beforeTotalSold).to.be.eq(0);
 
+      // get beforePresaleContractBalanceUSDC
+      const beforePresaleContractBalanceUSDC = await USDC.balanceOf(presaleContract.address);
+
       // run method buy() - successfully
       await expect(presaleContract.connect(aliceWallet).buy(amountUSDC)).not.to.be.reverted;
+
+      // get and check afterPresaleContractBalanceUSDC
+      const afterPresaleContractBalanceUSDC = await USDC.balanceOf(presaleContract.address);
+      expect(afterPresaleContractBalanceUSDC).to.be.eq(beforePresaleContractBalanceUSDC.add(amountUSDC));
 
       // get and check afterBalanceUSDC
       const afterBalanceUSDC = await USDC.balanceOf(aliceWallet.address);
@@ -242,6 +251,49 @@ async function testPresaleContracts(
       // run method purchasedAmount() - successfully
       const afterPurchasedAmount = await presaleContract.purchasedAmount(aliceWallet.address);
       expect(afterPurchasedAmount).to.be.eq(afterBalanceSHBT);
+    });
+  });
+
+  describe('sendUSDC', () => {
+    it('fail - not owner', async () => {
+      // set and check amountUSDC
+      const amountUSDC = expandTo18Decimals(333);
+      expect(amountUSDC).to.be.gt(0);
+
+      // check contract owner - not owner
+      await checkAddressContractOwner(aliceWallet.address, presaleContract, false);
+
+      // run method sendUSDC() - reverted
+      await expect(presaleContract.connect(aliceWallet).sendUSDC(bobWallet.address, amountUSDC)).to.be.revertedWith(
+        ERRORS.IS_NOT_OWNER,
+      );
+    });
+
+    it('success - owner', async () => {
+      // set and check amountUSDC
+      const amountUSDC = expandTo18Decimals(333);
+      expect(amountUSDC).to.be.gt(0);
+
+      // get beforeBalanceUSDC
+      const beforeBalanceUSDC = await USDC.balanceOf(bobWallet.address);
+
+      // get and check beforePresaleContractBalanceUSDC
+      const beforePresaleContractBalanceUSDC = await USDC.balanceOf(presaleContract.address);
+      expect(beforePresaleContractBalanceUSDC).to.be.gte(amountUSDC);
+
+      // check contract owner - owner
+      await checkAddressContractOwner(ownerWallet.address, presaleContract, true);
+
+      // run method sendUSDC() - successfully
+      await expect(presaleContract.connect(ownerWallet).sendUSDC(bobWallet.address, amountUSDC)).not.to.be.reverted;
+
+      // get and check afterBalanceUSDC
+      const afterBalanceUSDC = await USDC.balanceOf(bobWallet.address);
+      expect(afterBalanceUSDC).to.be.eq(beforeBalanceUSDC.add(amountUSDC));
+
+      // get and check beforePresaleContractBalanceUSDC
+      const afterPresaleContractBalanceUSDC = await USDC.balanceOf(presaleContract.address);
+      expect(afterPresaleContractBalanceUSDC).to.be.eq(beforePresaleContractBalanceUSDC.sub(amountUSDC));
     });
   });
 }
