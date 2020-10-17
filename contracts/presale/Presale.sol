@@ -14,7 +14,7 @@ contract Presale is Ownable {
     IERC20 USDC;
     ISaleHybridToken SHBT;
 
-    uint internal constant duration = 6500 * 5; // blocks
+    uint internal duration; // blocks
 
     uint internal rate;
     uint internal startBlock;
@@ -27,9 +27,10 @@ contract Presale is Ownable {
 
     event Sold(address account, uint amount);
 
-    constructor(address _USDC, address _SHBT) public {
+    constructor(address _USDC, address _SHBT, uint _duration) public {
         USDC = IERC20(_USDC);
         SHBT = ISaleHybridToken(_SHBT);
+        duration = _duration;
     }
 
     function start() external onlyOwner {
