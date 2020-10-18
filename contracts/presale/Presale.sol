@@ -54,8 +54,8 @@ contract Presale is Ownable {
         uint availableAmountSHBT = purchasedLimit.sub(purchasedAmountOf[msg.sender]);
         uint amountSHBT = _amountUSDC.mul(PresaleConstants.ONE_HBT_IN_WEI).div(rate);
         if (amountSHBT > availableAmountSHBT) {
-            _amountUSDC = amountSHBT.sub(availableAmountSHBT).mul(rate);
             amountSHBT = availableAmountSHBT;
+            _amountUSDC = amountSHBT.mul(rate).div(PresaleConstants.ONE_HBT_IN_WEI);
         }
         SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC);
         SafeTransfer.sendERC20(address(SHBT), msg.sender, amountSHBT);

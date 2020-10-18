@@ -1,4 +1,4 @@
-import { Wallet } from 'ethers';
+import { Contract, Wallet } from 'ethers';
 import { Web3Provider } from 'ethers/providers';
 import { SaleHybridToken } from '../../typechain/SaleHybridToken';
 import { AlphaPresale } from '../../typechain/AlphaPresale';
@@ -11,11 +11,10 @@ import { BetaPresaleFactory } from '../../typechain/BetaPresaleFactory';
 import { GammaPresaleFactory } from '../../typechain/GammaPresaleFactory';
 import { PresaleConstantsFactory } from '../../typechain/PresaleConstantsFactory';
 import { HybridTokenFactory } from '../../typechain/HybridTokenFactory';
-import { HybridToken } from '../../typechain/HybridToken';
 import { expandTo18Decimals } from '../shared/utilities';
 
 export interface PresaleFixture {
-  testUSDC: HybridToken;
+  USDC: Contract;
   sHBT: SaleHybridToken;
   presaleConstants: PresaleConstants;
   alphaPresale: AlphaPresale;
@@ -23,31 +22,47 @@ export interface PresaleFixture {
   gammaPresale: GammaPresale;
 }
 
+export const presaleDuration = 25; // blocks
 const overrides = {
   gasLimit: 9999999,
   gasPrice: 1,
 };
-const testUSDCDeployParams = {
+const USDCDeployParams = {
   name: 'USDC',
   symbol: 'USDC',
   initialBalance: expandTo18Decimals(10000000),
 };
 
 export async function presaleFixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<PresaleFixture> {
-  const testUSDC = await new HybridTokenFactory(wallet).deploy(
-    testUSDCDeployParams.name,
-    testUSDCDeployParams.symbol,
+  const USDC = await new HybridTokenFactory(wallet).deploy(
+    USDCDeployParams.name,
+    USDCDeployParams.symbol,
     wallet.address,
-    testUSDCDeployParams.initialBalance,
+    USDCDeployParams.initialBalance,
     overrides,
   );
   const sHBT = await new SaleHybridTokenFactory(wallet).deploy(overrides);
   const presaleConstants = await new PresaleConstantsFactory(wallet).deploy(overrides);
-  const alphaPresale = await new AlphaPresaleFactory(wallet).deploy(testUSDC.address, sHBT.address, overrides);
-  const betaPresale = await new BetaPresaleFactory(wallet).deploy(testUSDC.address, sHBT.address, overrides);
-  const gammaPresale = await new GammaPresaleFactory(wallet).deploy(testUSDC.address, sHBT.address, overrides);
+  const alphaPresale = await new AlphaPresaleFactory(wallet).deploy(
+    USDC.address,
+    sHBT.address,
+    presaleDuration,
+    overrides,
+  );
+  const betaPresale = await new BetaPresaleFactory(wallet).deploy(
+    USDC.address,
+    sHBT.address,
+    presaleDuration,
+    overrides,
+  );
+  const gammaPresale = await new GammaPresaleFactory(wallet).deploy(
+    USDC.address,
+    sHBT.address,
+    presaleDuration,
+    overrides,
+  );
   return {
-    testUSDC,
+    USDC,
     sHBT,
     presaleConstants,
     alphaPresale,
