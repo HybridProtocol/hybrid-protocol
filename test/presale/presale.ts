@@ -1,8 +1,5 @@
 import chai, { expect } from 'chai';
 import { createFixtureLoader, MockProvider, solidity } from 'ethereum-waffle';
-import { AlphaPresale } from '../../typechain/AlphaPresale';
-import { BetaPresale } from '../../typechain/BetaPresale';
-import { GammaPresale } from '../../typechain/GammaPresale';
 import { presaleDuration, presaleFixture } from './presaleFixtures';
 import { SaleHybridToken } from '../../typechain/SaleHybridToken';
 import { expandTo18Decimals, mineBlocks } from '../shared/utilities';
@@ -263,6 +260,7 @@ async function testPresaleContracts(
       // get and check afterTotalSold
       const afterTotalSold = await presaleContract.totalSold();
       expect(afterTotalSold).to.be.eq(beforeTotalSold.add(expectedAmountSHBT));
+      expect(afterTotalSold).to.be.lt(presaleLimit);
     });
 
     it('success - buy sHBT count > purchaseLimit', async () => {
@@ -318,6 +316,7 @@ async function testPresaleContracts(
       // get and check afterTotalSold
       const afterTotalSold = await presaleContract.totalSold();
       expect(afterTotalSold).to.be.eq(beforeTotalSold.add(correctedExpectedAmountSHBT));
+      expect(afterTotalSold).to.be.lt(presaleLimit);
     });
   });
 
