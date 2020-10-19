@@ -59,7 +59,7 @@ contract SaleHybridToken is ERC20, Ownable, Maintenance {
         uint _amount
     ) external onlyMaintainers onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
         require(!isBurnedFor[_presale], "SaleHybridToken: ONLY_ONCE_BURN");
-        _burn(msg.sender, _amount);
+        _burn(_presale, _amount);
         isBurnedFor[_presale] = true;
     }
 }
