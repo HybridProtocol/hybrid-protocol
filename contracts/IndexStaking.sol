@@ -20,12 +20,12 @@ contract IndexStaking {
     mapping(address => uint) public stakedSnapshot; // S0
 
     uint public accumulatedReward;
-    uint public startedBlock;
+    uint public startBlock;
 
     constructor(address _stakingTokenAddress, address _rewardTokenAddress) public {
         stakingToken = _stakingTokenAddress;
         rewardToken = _rewardTokenAddress;
-        startedBlock = block.number;
+        startBlock = block.number;
     }
 
     function deposit(uint _amount) external {
@@ -49,11 +49,11 @@ contract IndexStaking {
     }
 
     function _calculateReward() private returns (uint reward) {
-        if (startedBlock.add(duration) > block.number) {
+        if (startBlock.add(duration) > block.number) {
             reward = rewardSupply
                 .mul(block.number)
-                .mul(block.number.sub(startedBlock))
-                .div((startedBlock.add(duration)).mul(duration));
+                .mul(block.number.sub(startBlock))
+                .div((startBlock.add(duration)).mul(duration));
         }
         reward -= accumulatedReward;
         accumulatedReward += reward;
