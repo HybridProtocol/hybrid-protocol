@@ -69,6 +69,9 @@ async function testPresaleContracts(
 
     // init test action
     await sHBT.mintPresale(fixture.alphaPresale.address, fixture.betaPresale.address, fixture.gammaPresale.address); // send sHBT tokens to alphaPresale, betaPresale and gammaPresale addresses
+    await sHBT.addAddressToMaintainers(fixture.alphaPresale.address);
+    await sHBT.addAddressToMaintainers(fixture.betaPresale.address);
+    await sHBT.addAddressToMaintainers(fixture.gammaPresale.address);
     await USDC.transfer(aliceWallet.address, expandTo18Decimals(1000000)); // transfer USDC tokens to Alice address
     await USDC.transfer(bobWallet.address, expandTo18Decimals(2000000)); // transfer USDC tokens to Bob address
     await USDC.transfer(presaleContract.address, expandTo18Decimals(3000000)); // transfer USDC tokens to presaleContract address
@@ -412,11 +415,11 @@ async function testPresaleContracts(
       await checkAddressContractOwner(ownerWallet.address, presaleContract, true);
 
       // run method burn() - successfully
-      await expect(presaleContract.connect(ownerWallet).burn()).not.to.be.reverted; // TODO - transaction reverted now
+      await expect(presaleContract.connect(ownerWallet).burn()).not.to.be.reverted;
 
       // get and check presaleContract sHBT balance
       const afterPresaleContractBalanceSHBT = await sHBT.balanceOf(presaleContract.address);
-      expect(afterPresaleContractBalanceSHBT).to.be.eq(0);
+      expect(afterPresaleContractBalanceSHBT).to.be.eq(0); // TODO - condition is not met
     });
   });
 }
