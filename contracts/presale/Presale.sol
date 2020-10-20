@@ -40,7 +40,7 @@ contract Presale is Ownable {
 
     function burn() external onlyOwner {
         require(block.number > startBlock + duration, "Presale: INVALID_DATE");
-        uint unreleasedAmount = totalLimit.sub(SHBT.balanceOf(address(this)));
+        uint unreleasedAmount = SHBT.balanceOf(address(this));
         SHBT.burnFor(address(this), unreleasedAmount);
     }
 
