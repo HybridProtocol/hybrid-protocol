@@ -13,6 +13,7 @@ const ERRORS = {
   PRESALE_ALREADY_STARTED: 'Presale: ALREADY_STARTED',
   PRESALE_INVALID_DATE: 'Presale: INVALID_DATE',
   PRESALE_ZERO_AMOUNT_USDC: 'Presale: ZERO_AMOUNT_USDC',
+  PRESALE_ZERO_AMOUNT_SHBT: 'Presale: ZERO_AMOUNT_SHBT',
   SAFE_TRANSFER_TRANSFER_FROM: 'SafeTransfer: TRANSFER_FROM',
   SAFE_TRANSFER_SEND_ERC20: 'SafeTransfer: SEND_ERC20',
 };
@@ -109,6 +110,11 @@ async function testPresaleContracts(
   });
 
   describe('buy', () => {
+    beforeEach(async () => {
+      // start presale
+      await presaleContract.connect(ownerWallet).start();
+    });
+
     it('fail - invalid block.number (Presale: INVALID_DATE)', async () => {
       // mine blocks
       await mineBlocks(provider, presaleDuration);
@@ -304,7 +310,71 @@ async function testPresaleContracts(
       const beforePresaleContractBalanceUSDC = await USDC.balanceOf(presaleContract.address);
 
       // run method buy() - successfully
-      await expect(presaleContract.connect(aliceWallet).buy(correctedAmountUSDC)).not.to.be.reverted;
+      await expect(presaleContract.connect(aliceWallet).buy(amountUSDC)).not.to.be.reverted;
+
+      // get and check afterPresaleContractBalanceUSDC
+      const afterPresaleContractBalanceUSDC = await USDC.balanceOf(presaleContract.address);
+      expect(afterPresaleContractBalanceUSDC).to.be.eq(beforePresaleContractBalanceUSDC.add(correctedAmountUSDC));
+
+      // get and check afterBalanceUSDC
+      const afterBalanceUSDC = await USDC.balanceOf(aliceWallet.address);
+      expect(afterBalanceUSDC).to.be.eq(beforeBalanceUSDC.sub(correctedAmountUSDC));
+
+      // get and check afterBalanceSHBT
+      const afterBalanceSHBT = await sHBT.balanceOf(aliceWallet.address);
+      expect(afterBalanceSHBT).to.be.eq(beforeBalanceSHBT.add(correctedExpectedAmountSHBT));
+
+      // get and check afterTotalSold
+      const afterTotalSold = await presaleContract.totalSold();
+      expect(afterTotalSold).to.be.eq(beforeTotalSold.add(correctedExpectedAmountSHBT));
+      expect(afterTotalSold).to.be.lt(presaleLimit);
+    });
+
+    it('success - two buys, each buy sHBT count > purchaseLimit', async () => {
+      // set and check amountUSDC
+      const totalAmountUSDC = expandTo18Decimals(1000000);
+      const amount1USDC = totalAmountUSDC.div(2);
+      const amount2USDC = totalAmountUSDC.sub(amount1USDC);
+      expect(amount1USDC).to.be.gt(0);
+      expect(amount2USDC).to.be.gt(0);
+
+      // increase USDC allowance to presaleContract.address
+      await USDC.connect(aliceWallet).increaseAllowance(presaleContract.address, totalAmountUSDC);
+
+      // get and check currentAllowanceUSDC
+      const currentAllowanceUSDC = await USDC.allowance(aliceWallet.address, presaleContract.address);
+      expect(currentAllowanceUSDC).to.be.gte(totalAmountUSDC);
+
+      // get and check beforeBalanceUSDC
+      const beforeBalanceUSDC = await USDC.balanceOf(aliceWallet.address);
+      expect(beforeBalanceUSDC).to.be.gte(totalAmountUSDC);
+
+      // get and check beforeBalanceSHBT
+      const beforeBalanceSHBT = await sHBT.balanceOf(aliceWallet.address);
+      expect(beforeBalanceSHBT).to.be.eq(0);
+
+      // сalculate expectedAmountSHBT
+      const expectedAmountSHBT = amount1USDC.mul(oneHbtInWei).div(presaleRate);
+      expect(expectedAmountSHBT).to.be.gt(purchaseLimit);
+
+      // correct variables
+      const correctedExpectedAmountSHBT = purchaseLimit;
+      const correctedAmountUSDC = correctedExpectedAmountSHBT.mul(presaleRate).div(oneHbtInWei);
+
+      // get and check beforeTotalSold
+      const beforeTotalSold = await presaleContract.totalSold();
+      expect(beforeTotalSold).to.be.eq(0);
+
+      // get beforePresaleContractBalanceUSDC
+      const beforePresaleContractBalanceUSDC = await USDC.balanceOf(presaleContract.address);
+
+      // run method buy() - first buy successfully
+      await expect(presaleContract.connect(aliceWallet).buy(amount1USDC)).not.to.be.reverted;
+
+      // run method buy() - second buy reverted
+      await expect(presaleContract.connect(aliceWallet).buy(amount2USDC)).to.be.revertedWith(
+        ERRORS.PRESALE_ZERO_AMOUNT_USDC,
+      );
 
       // get and check afterPresaleContractBalanceUSDC
       const afterPresaleContractBalanceUSDC = await USDC.balanceOf(presaleContract.address);
@@ -326,6 +396,11 @@ async function testPresaleContracts(
   });
 
   describe('purchasedAmount', () => {
+    beforeEach(async () => {
+      // start presale
+      await presaleContract.connect(ownerWallet).start();
+    });
+
     it('success', async () => {
       // get and check beforeBalanceSHBT
       const beforeBalanceSHBT = await sHBT.balanceOf(aliceWallet.address);
@@ -354,6 +429,11 @@ async function testPresaleContracts(
   });
 
   describe('sendUSDC', () => {
+    beforeEach(async () => {
+      // start presale
+      await presaleContract.connect(ownerWallet).start();
+    });
+
     it('fail - not owner', async () => {
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(333);
@@ -397,6 +477,14 @@ async function testPresaleContracts(
   });
 
   describe('burn', () => {
+    beforeEach(async () => {
+      // start presale
+      await presaleContract.connect(ownerWallet).start();
+
+      // mine blocks
+      await mineBlocks(provider, presaleDuration);
+    });
+
     it('fail - not owner', async () => {
       // check contract owner - not owner
       await checkAddressContractOwner(aliceWallet.address, presaleContract, false);
@@ -406,9 +494,6 @@ async function testPresaleContracts(
     });
 
     it('success - owner', async () => {
-      // mine blocks
-      await mineBlocks(provider, presaleDuration);
-
       // get presaleContract sHBT balance
       const beforePresaleContractBalanceSHBT = await sHBT.balanceOf(presaleContract.address);
       expect(beforePresaleContractBalanceSHBT).to.be.gt(0);

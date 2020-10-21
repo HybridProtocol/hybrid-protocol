@@ -50,13 +50,14 @@ contract Presale is Ownable {
 
     function buy(uint _amountUSDC) external {
         require(block.number <= startBlock + duration, "Presale: INVALID_DATE");
-        require(_amountUSDC > 0, "Presale: ZERO_AMOUNT_USDC");
         uint availableAmountSHBT = purchasedLimit.sub(purchasedAmountOf[msg.sender]);
         uint amountSHBT = _amountUSDC.mul(PresaleConstants.ONE_HBT_IN_WEI).div(rate);
         if (amountSHBT > availableAmountSHBT) {
             amountSHBT = availableAmountSHBT;
             _amountUSDC = amountSHBT.mul(rate).div(PresaleConstants.ONE_HBT_IN_WEI);
         }
+        require(_amountUSDC > 0, "Presale: ZERO_AMOUNT_USDC");
+        require(amountSHBT > 0, "Presale: ZERO_AMOUNT_SHBT");
         SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC);
         SafeTransfer.sendERC20(address(SHBT), msg.sender, amountSHBT);
         purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(amountSHBT);
