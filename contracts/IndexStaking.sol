@@ -28,14 +28,17 @@ contract IndexStaking {
         startBlock = block.number;
     }
 
-    function deposit(uint _amount) external {
+    function deposit(uint _amount) public {
+        if (stake[msg.sender] != 0) {
+            withdraw();
+        }
         SafeTransfer.transferFromERC20(address(stakingToken), msg.sender, address(this), _amount);
         stake[msg.sender] = _amount;
         stakedSnapshot[msg.sender] = staked;
         activeStakeDeposits = activeStakeDeposits.add(_amount);
     }
 
-    function withdraw() external {
+    function withdraw() public {
         uint deposited = stake[msg.sender];
         uint reward = _calculateReward();
         if (activeStakeDeposits != 0) {
@@ -48,12 +51,17 @@ contract IndexStaking {
         SafeTransfer.sendERC20(address(rewardToken), msg.sender, userReward);
     }
 
+    function withdraw(uint _amount) external {
+        withdraw();
+        deposit(_amount);
+    }
+
     function _calculateReward() private returns (uint reward) {
         if (startBlock.add(duration) > block.number) {
             reward = rewardSupply
                 .mul(block.number)
                 .mul(block.number.sub(startBlock))
-                .div((startBlock.add(duration)).mul(duration));
+                .div(startBlock.add(duration).mul(duration));
         }
         reward -= accumulatedReward;
         accumulatedReward += reward;
