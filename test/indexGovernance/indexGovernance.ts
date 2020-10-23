@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import { createFixtureLoader, MockProvider, solidity } from 'ethereum-waffle';
-import { Contract } from 'ethers';
+import { Contract, Wallet } from 'ethers';
 import { IndexHybridToken } from '../../typechain/IndexHybridToken';
 import { IndexGovernance } from '../../typechain/IndexGovernance';
 import { indexGovernanceFixture, indexGovernanceMinDuration } from './indexGovernanceFixtures';
@@ -16,6 +16,11 @@ const ERRORS = {
   VOTING_NOT_IN_PROGRESS: 'IndexGovernance: VOTING_NOT_IN_PROGRESS',
   TRANSFER_FROM: 'IndexGovernance: TRANSFER_FROM',
 };
+
+export interface PortfolioInfo {
+  symbol: string;
+  weight: number;
+}
 
 describe('IndexGovernance', () => {
   const provider = new MockProvider({
@@ -102,7 +107,7 @@ describe('IndexGovernance', () => {
     indexGovernance = fixture.indexGovernance;
 
     // init test action
-    await indexHybridToken.addAddressesToMainteiners([aliceWallet.address]); // add aliceWallet.address to mainteiners
+    await indexHybridToken.addAddressesToMainteiners([aliceWallet.address, indexGovernance.address]); // add aliceWallet.address, indexGovernance.address to mainteiners
     await indexHybridToken
       .connect(aliceWallet)
       .mintAmount(
@@ -435,6 +440,104 @@ describe('IndexGovernance', () => {
       expect(afterProposal.cons).to.be.eq(beforeProposal.cons.add(totalConsXHBT));
     });
   });
+
+  describe('finalize', () => {
+    it('fail - proposal not completed (IndexGovernance: VOTING_IN_PROGRESS)', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // run method finalize() - reverted
+      await expect(indexGovernance.connect(otherWallet1).finalize()).to.be.revertedWith(ERRORS.VOTING_IN_PROGRESS);
+    });
+
+    it('success - proposal.pros <= proposal.cons', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // get beforePortfolioList
+      const beforePortfolioList = await getCurrentPortfolio(indexHybridToken, otherWallet1);
+      expect(beforePortfolioList.length).to.be.gt(0);
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // set prosXHBTAmount, consXHBTAmount, totalXHBTAmount, increase XHBT allowance and do votes
+      const prosXHBTAmount = 100;
+      const consXHBTAmount = 200;
+      const totalXHBTAmount = prosXHBTAmount + consXHBTAmount;
+      expect(prosXHBTAmount).to.be.lte(consXHBTAmount);
+      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalXHBTAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(prosXHBTAmount, true)).not.to.be.reverted;
+      await expect(indexGovernance.connect(otherWallet1).vote(consXHBTAmount, false)).not.to.be.reverted;
+
+      // mine blocks
+      await mineBlocks(provider, voteAssets.duration);
+
+      // get and check afterProposal
+      const afterProposal = await indexGovernance.proposal();
+      expect(afterProposal.pros).to.be.eq(prosXHBTAmount);
+      expect(afterProposal.cons).to.be.eq(consXHBTAmount);
+      expect(afterProposal.pros).to.be.lte(afterProposal.cons);
+
+      // run method finalize() - successfully
+      await expect(indexGovernance.connect(otherWallet1).finalize()).not.to.be.reverted;
+
+      // get afterPortfolioList, value should not changed
+      const afterPortfolioList = await getCurrentPortfolio(indexHybridToken, otherWallet1);
+      expect(afterPortfolioList).to.eql(beforePortfolioList);
+    });
+
+    it('success - proposal.pros > proposal.cons', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // get beforePortfolioList
+      const beforePortfolioList = await getCurrentPortfolio(indexHybridToken, otherWallet1);
+      expect(beforePortfolioList.length).to.be.gt(0);
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // set prosXHBTAmount, consXHBTAmount, totalXHBTAmount, increase XHBT allowance and do votes
+      const prosXHBTAmount = 200;
+      const consXHBTAmount = 100;
+      const totalXHBTAmount = prosXHBTAmount + consXHBTAmount;
+      expect(prosXHBTAmount).to.be.gt(consXHBTAmount);
+      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalXHBTAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(prosXHBTAmount, true)).not.to.be.reverted;
+      await expect(indexGovernance.connect(otherWallet1).vote(consXHBTAmount, false)).not.to.be.reverted;
+
+      // mine blocks
+      await mineBlocks(provider, voteAssets.duration);
+
+      // get and check afterProposal
+      const afterProposal = await indexGovernance.proposal();
+      expect(afterProposal.pros).to.be.eq(prosXHBTAmount);
+      expect(afterProposal.cons).to.be.eq(consXHBTAmount);
+      expect(afterProposal.pros).to.be.gt(afterProposal.cons);
+
+      // run method finalize() - successfully
+      await expect(indexGovernance.connect(otherWallet1).finalize()).not.to.be.reverted;
+
+      // get afterPortfolioList, value should changed
+      const afterPortfolioList = await getCurrentPortfolio(indexHybridToken, otherWallet1);
+      expect(afterPortfolioList).not.to.eql(beforePortfolioList);
+      expect(afterPortfolioList.length).to.be.eq(voteAssets.assets.length);
+      for (let i = 0; i < afterPortfolioList.length; i++) {
+        expect(afterPortfolioList[i].symbol).to.be.eq(voteAssets.assets[i]);
+        expect(afterPortfolioList[i].weight).to.be.eq(voteAssets.weights[i]);
+      }
+    });
+  });
 });
 
 async function checkAddressMainteiner(address: string, contract: Contract, expectMainteiner: boolean): Promise<void> {
@@ -444,4 +547,20 @@ async function checkAddressMainteiner(address: string, contract: Contract, expec
   } else {
     expect(isMainteiner).to.not.be.eq(true);
   }
+}
+
+async function getCurrentPortfolio(contract: IndexHybridToken, wallet: Wallet): Promise<PortfolioInfo[]> {
+  const portfolioList: PortfolioInfo[] = [];
+  let i = 0;
+  let totalWeight = 0;
+  while (totalWeight < 10000) {
+    const beforePortfolio = await contract.connect(wallet).portfolio(i);
+    portfolioList.push({
+      symbol: beforePortfolio.symbol,
+      weight: beforePortfolio.weight,
+    });
+    totalWeight = totalWeight + beforePortfolio.weight;
+    i = i + 1;
+  }
+  return portfolioList;
 }
