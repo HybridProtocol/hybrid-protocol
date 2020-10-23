@@ -37,6 +37,7 @@ contract IndexGovernance is Maintenance {
     constructor(address _indexToken, uint _minDuration) public {
         require(_minDuration > 0, "IndexGovernance: MIN_DURATION_INVALID");
         indexToken = _indexToken;
+        stakingToken = _indexToken; // TODO: check it
         minDuration = _minDuration;
     }
 

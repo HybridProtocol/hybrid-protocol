@@ -13,6 +13,8 @@ const ERRORS = {
   DURATION_INVALID: 'IndexGovernance: DURATION_INVALID',
   TOTAL_WEIGHTS: 'IndexGovernance: TOTAL_WEIGHTS',
   VOTING_IN_PROGRESS: 'IndexGovernance: VOTING_IN_PROGRESS',
+  VOTING_NOT_IN_PROGRESS: 'IndexGovernance: VOTING_NOT_IN_PROGRESS',
+  TRANSFER_FROM: 'IndexGovernance: TRANSFER_FROM',
 };
 
 describe('IndexGovernance', () => {
@@ -219,7 +221,7 @@ describe('IndexGovernance', () => {
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id.toNumber()).to.be.eq(0);
+      expect(beforeProposal.id).to.be.eq(0);
       expect(beforeProposal.initiator).to.be.eq(nullableAddress);
 
       // run method createProposal() - successfully
@@ -234,7 +236,7 @@ describe('IndexGovernance', () => {
 
       // get and check afterProposal
       const afterProposal = await indexGovernance.proposal();
-      expect(afterProposal.id.toNumber()).to.be.eq(beforeProposal.id.toNumber() + 1);
+      expect(afterProposal.id).to.be.eq(beforeProposal.id.add(1));
       expect(afterProposal.initiator).to.be.eq(aliceWallet.address);
     });
 
@@ -247,7 +249,7 @@ describe('IndexGovernance', () => {
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id.toNumber()).to.be.eq(0);
+      expect(beforeProposal.id).to.be.eq(0);
       expect(beforeProposal.initiator).to.be.eq(nullableAddress);
 
       // run method createProposal() - successfully
@@ -257,7 +259,7 @@ describe('IndexGovernance', () => {
 
       // get and check afterProposal
       const afterProposal = await indexGovernance.proposal();
-      expect(afterProposal.id.toNumber()).to.be.eq(beforeProposal.id.toNumber() + 1);
+      expect(afterProposal.id).to.be.eq(beforeProposal.id.add(1));
       expect(afterProposal.initiator).to.be.eq(aliceWallet.address);
     });
 
@@ -271,7 +273,7 @@ describe('IndexGovernance', () => {
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id.toNumber()).to.be.eq(0);
+      expect(beforeProposal.id).to.be.eq(0);
       expect(beforeProposal.initiator).to.be.eq(nullableAddress);
 
       // run method createProposal() - successfully
@@ -289,8 +291,148 @@ describe('IndexGovernance', () => {
 
       // get and check afterProposal
       const afterProposal = await indexGovernance.proposal();
-      expect(afterProposal.id.toNumber()).to.be.eq(beforeProposal.id.toNumber() + 2);
+      expect(afterProposal.id).to.be.eq(beforeProposal.id.add(2));
       expect(afterProposal.initiator).to.be.eq(bobWallet.address);
+    });
+  });
+
+  describe('vote', () => {
+    it('fail - proposal has already ended (IndexGovernance: VOTING_NOT_IN_PROGRESS)', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // mine blocks
+      await mineBlocks(provider, voteAssets.duration);
+
+      // set and check amountXHBT
+      const amountXHBT = 10;
+      expect(amountXHBT).to.be.gt(0);
+
+      // run method vote() - reverted
+      await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, true)).to.be.revertedWith(
+        ERRORS.VOTING_NOT_IN_PROGRESS,
+      );
+    });
+
+    it('fail - invalid transferFromERC20 - not enough allowance, enough balance (IndexGovernance: TRANSFER_FROM)', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // set and check amountXHBT
+      const amountXHBT = 10;
+      expect(amountXHBT).to.be.gt(0);
+
+      // get and check currentAllowanceXHBT
+      const currentAllowanceXHBT = await indexHybridToken.allowance(otherWallet1.address, indexGovernance.address);
+      expect(currentAllowanceXHBT).to.be.lt(amountXHBT);
+
+      // get and check beforeBalanceXHBT
+      const beforeBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
+      expect(beforeBalanceXHBT).to.be.gte(amountXHBT);
+
+      // run method vote() - reverted
+      await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, true)).to.be.revertedWith(
+        ERRORS.TRANSFER_FROM,
+      );
+    });
+
+    it('fail - invalid transferFromERC20 - enough allowance, not enough balance (IndexGovernance: TRANSFER_FROM)', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // set and check amountXHBT
+      const amountXHBT = expandTo18Decimals(1000000000);
+      expect(amountXHBT).to.be.gt(0);
+
+      // increase XHBT allowance to indexGovernance.address
+      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, amountXHBT);
+
+      // get and check currentAllowanceXHBT
+      const currentAllowanceXHBT = await indexHybridToken.allowance(otherWallet1.address, indexGovernance.address);
+      expect(currentAllowanceXHBT).to.be.gte(amountXHBT);
+
+      // get and check beforeBalanceXHBT
+      const beforeBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
+      expect(beforeBalanceXHBT).to.be.lt(amountXHBT);
+
+      // run method vote() - reverted
+      await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, false)).to.be.revertedWith(
+        ERRORS.TRANSFER_FROM,
+      );
+    });
+
+    it('success', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal.id).to.be.eq(1);
+      expect(beforeProposal.pros).to.be.eq(0);
+      expect(beforeProposal.cons).to.be.eq(0);
+
+      // set prosXHBTList, consXHBTList, totalProsXHBT, totalConsXHBT and totalAmountXHBT
+      const prosXHBTList = [100, 200, 300, 400, 500];
+      const consXHBTList = [200, 300, 400];
+      const totalProsXHBT = prosXHBTList.reduce((totalAmount: number, item: number) => totalAmount + item, 0);
+      const totalConsXHBT = consXHBTList.reduce((totalAmount: number, item: number) => totalAmount + item, 0);
+      const totalAmountXHBT = totalProsXHBT + totalConsXHBT;
+      expect(totalAmountXHBT).to.be.gt(0);
+
+      // increase XHBT allowance to indexGovernance.address
+      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalAmountXHBT);
+
+      // get and check currentAllowanceXHBT
+      const currentAllowanceXHBT = await indexHybridToken.allowance(otherWallet1.address, indexGovernance.address);
+      expect(currentAllowanceXHBT).to.be.gte(totalAmountXHBT);
+
+      // get and check beforeBalanceXHBT
+      const beforeBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
+      expect(beforeBalanceXHBT).to.be.gte(totalAmountXHBT);
+
+      // get and check beforeVotesOfUser
+      const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
+      expect(beforeVotesOfUser).to.be.eq(0);
+
+      // run method vote() several times (decision: true) - successfully
+      for (const amountXHBT of prosXHBTList) {
+        await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, true)).not.to.be.reverted;
+      }
+
+      // run method vote() several times (decision: false) - successfully
+      for (const amountXHBT of consXHBTList) {
+        await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, false)).not.to.be.reverted;
+      }
+
+      // get and check afterVotesOfUser
+      const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
+      expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser.add(totalAmountXHBT));
+
+      // get and check afterProposal
+      const afterProposal = await indexGovernance.proposal();
+      expect(afterProposal.id).to.be.eq(beforeProposal.id);
+      expect(afterProposal.pros).to.be.eq(beforeProposal.pros.add(totalProsXHBT));
+      expect(afterProposal.cons).to.be.eq(beforeProposal.cons.add(totalConsXHBT));
     });
   });
 });
