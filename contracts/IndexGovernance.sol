@@ -11,6 +11,8 @@ import "../libraries/SafeTransfer.sol";
 contract IndexGovernance is Maintenance {
     using SafeMath for uint256;
 
+    uint internal minDuration; // blocks
+
     address public indexToken;
     address public stakingToken;
     uint lastProposalId;
@@ -32,8 +34,10 @@ contract IndexGovernance is Maintenance {
     event Voted(address voter, uint amount, bool decision);
     event ProposalClosed(bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator);
 
-    constructor(address _indexToken) public {
+    constructor(address _indexToken, uint _minDuration) public {
+        require(_minDuration > 0, "IndexGovernance: MIN_DURATION_INVALID");
         indexToken = _indexToken;
+        minDuration = _minDuration;
     }
 
     function createProposal(
@@ -42,7 +46,7 @@ contract IndexGovernance is Maintenance {
         uint _duration
     ) public onlyMaintainers {
         require(_assets.length == _weights.length, "IndexGovernance: INVALID_LENGTH");
-        require(_duration <= 3 * 6500 && _duration > 6500, "IndexGovernance: DURATION_INVALID");
+        require(_duration <= 3 * minDuration && _duration > minDuration, "IndexGovernance: DURATION_INVALID");
         if (proposal.deadline != 0) {
             finalize();
         }
