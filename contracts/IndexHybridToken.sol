@@ -33,13 +33,12 @@ contract IndexHybridToken is ERC20, Maintenance {
     function updateComposition(bytes8[] calldata _assets, uint16[] calldata _weights) external onlyMaintainers {
         require(_assets.length == _weights.length, "IndexHybridToken: INVALID_LENGTH");
         uint totalWeights;
-        for (uint i = 0; i < portfolio.length; i++) {
+        for (uint i = 0; i < _weights.length; i++) {
             totalWeights += _weights[i];
         }
         require(totalWeights == 10000, "IndexHybridToken: TOTAL_WEIGHTS");
         delete portfolio;
-        for (uint i = 0; i < portfolio.length; i++) {
-            totalWeights += _weights[i];
+        for (uint i = 0; i < _weights.length; i++) {
             portfolio.push(Asset(_assets[i], _weights[i]));
         }
         emit CompositionUpdated(_assets, _weights);
