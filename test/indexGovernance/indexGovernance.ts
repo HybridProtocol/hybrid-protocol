@@ -28,16 +28,7 @@ describe('IndexGovernance', () => {
     mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
     gasLimit: 9999999,
   });
-  const [
-    ownerWallet,
-    aliceWallet,
-    bobWallet,
-    otherWallet1,
-    otherWallet2,
-    otherWallet3,
-    otherWallet4,
-    otherWallet5,
-  ] = provider.getWallets();
+  const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = provider.getWallets();
   const loadFixture = createFixtureLoader(provider, [ownerWallet]);
   let indexHybridToken: IndexHybridToken;
   let indexGovernance: IndexGovernance;
@@ -110,17 +101,7 @@ describe('IndexGovernance', () => {
     await indexHybridToken.addAddressesToMainteiners([aliceWallet.address, indexGovernance.address]); // add aliceWallet.address, indexGovernance.address to mainteiners
     await indexHybridToken
       .connect(aliceWallet)
-      .mintAmount(
-        [
-          aliceWallet.address,
-          bobWallet.address,
-          otherWallet1.address,
-          otherWallet2.address,
-          otherWallet3.address,
-          otherWallet4.address,
-        ],
-        expandTo18Decimals(1000),
-      ); // send xHBT to address list
+      .mintAmount([aliceWallet.address, bobWallet.address, otherWallet1.address], expandTo18Decimals(1000)); // send xHBT to address list
     await indexHybridToken
       .connect(aliceWallet)
       .updateComposition(voteProposalAssets.start.assets, voteProposalAssets.start.weights); // set start composition
@@ -622,6 +603,78 @@ describe('IndexGovernance', () => {
       // get and check beforeIndexGovernanceBalanceXHBT
       const afterIndexGovernanceBalanceXHBT = await indexHybridToken.balanceOf(indexGovernance.address);
       expect(afterIndexGovernanceBalanceXHBT).to.be.eq(xHBTAmount - claimedXHBTAmount);
+    });
+  });
+
+  describe('indexToken', () => {
+    it('success', async () => {
+      const indexToken = await indexGovernance.indexToken();
+      expect(indexToken).to.be.eq(indexHybridToken.address);
+    });
+  });
+
+  describe('stakingToken', () => {
+    it('success', async () => {
+      const stakingToken = await indexGovernance.stakingToken();
+      expect(stakingToken).to.be.eq(indexHybridToken.address);
+    });
+  });
+
+  describe('votesOfUserByProposalId', () => {
+    it('success', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal.id).to.be.eq(1);
+
+      // get and check beforeVotesOfUser
+      const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
+      expect(beforeVotesOfUser).to.be.eq(0);
+
+      // set xHBTAmount, increase XHBT allowance and do votes
+      const xHBTAmount = 500;
+      expect(xHBTAmount).to.be.gt(0);
+      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, xHBTAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(xHBTAmount, true)).not.to.be.reverted;
+
+      // get and check afterVotesOfUser
+      const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
+      expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser.add(xHBTAmount));
+    });
+  });
+
+  describe('proposal', () => {
+    it('success', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal.id).to.be.eq(0);
+      expect(beforeProposal.initiator).to.be.eq(nullableAddress);
+      expect(beforeProposal.pros).to.be.eq(0);
+      expect(beforeProposal.cons).to.be.eq(0);
+      expect(beforeProposal.deadline).to.be.eq(0);
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(bobWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // get and check beforeProposal
+      const afterProposal = await indexGovernance.proposal();
+      expect(afterProposal.id).to.be.eq(beforeProposal.id.add(1));
+      expect(afterProposal.initiator).to.be.eq(bobWallet.address);
+      expect(afterProposal.pros).to.be.eq(0);
+      expect(afterProposal.cons).to.be.eq(0);
+      expect(afterProposal.deadline).to.be.gt(0);
     });
   });
 });
