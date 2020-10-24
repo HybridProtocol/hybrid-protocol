@@ -538,6 +538,92 @@ describe('IndexGovernance', () => {
       }
     });
   });
+
+  describe('claimFunds', () => {
+    it('fail - proposal not completed (IndexGovernance: VOTING_IN_PROGRESS)', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // set xHBTAmount, increase XHBT allowance and do votes
+      const xHBTAmount = 500;
+      expect(xHBTAmount).to.be.gt(0);
+      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, xHBTAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(xHBTAmount, true)).not.to.be.reverted;
+
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal.id).to.be.eq(1);
+
+      // get and check beforeVotesOfUser
+      const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
+      expect(beforeVotesOfUser).to.be.eq(xHBTAmount);
+
+      // run method claimFunds() - reverted
+      await expect(indexGovernance.connect(otherWallet1).claimFunds(xHBTAmount, beforeProposal.id)).to.be.revertedWith(
+        ERRORS.VOTING_IN_PROGRESS,
+      );
+
+      // get and check afterVotesOfUser
+      const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
+      expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser);
+    });
+
+    it('success', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // run method createProposal() - successfully
+      await expect(
+        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+      ).not.to.be.reverted;
+
+      // set xHBTAmount, increase XHBT allowance and do votes
+      const xHBTAmount = 500;
+      expect(xHBTAmount).to.be.gt(0);
+      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, xHBTAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(xHBTAmount, true)).not.to.be.reverted;
+
+      // get and check beforeIndexGovernanceBalanceXHBT
+      const beforeIndexGovernanceBalanceXHBT = await indexHybridToken.balanceOf(indexGovernance.address);
+      expect(beforeIndexGovernanceBalanceXHBT).to.be.eq(xHBTAmount);
+
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal.id).to.be.eq(1);
+
+      // get beforeBalanceXHBT
+      const beforeBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
+
+      // get and check beforeVotesOfUser
+      const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
+      expect(beforeVotesOfUser).to.be.eq(xHBTAmount);
+
+      // mine blocks
+      await mineBlocks(provider, voteAssets.duration);
+
+      // run method claimFunds() - reverted
+      const claimedXHBTAmount = xHBTAmount - 200;
+      await expect(indexGovernance.connect(otherWallet1).claimFunds(claimedXHBTAmount, beforeProposal.id)).not.to.be
+        .reverted;
+
+      // get and check afterBalanceXHBT
+      const afterBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
+      expect(afterBalanceXHBT).to.be.eq(beforeBalanceXHBT.add(claimedXHBTAmount));
+
+      // get and check afterVotesOfUser
+      const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
+      expect(afterVotesOfUser).to.be.eq(xHBTAmount - claimedXHBTAmount);
+
+      // get and check beforeIndexGovernanceBalanceXHBT
+      const afterIndexGovernanceBalanceXHBT = await indexHybridToken.balanceOf(indexGovernance.address);
+      expect(afterIndexGovernanceBalanceXHBT).to.be.eq(xHBTAmount - claimedXHBTAmount);
+    });
+  });
 });
 
 async function checkAddressMainteiner(address: string, contract: Contract, expectMainteiner: boolean): Promise<void> {

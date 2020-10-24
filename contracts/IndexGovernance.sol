@@ -85,7 +85,7 @@ contract IndexGovernance is Maintenance {
 
     function claimFunds(uint _amount, uint _proposalId) public {
         if (proposal.id == _proposalId) {
-            require(proposal.deadline > block.number, "IndexGovernance: VOTING_IN_PROGRESS");
+            require(proposal.deadline <= block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         }
         votesOfUserByProposalId[_proposalId][msg.sender] = votesOfUserByProposalId[_proposalId][msg.sender].sub(_amount);
         require(SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount), "IndexGovernance: SEND_ERC20");
