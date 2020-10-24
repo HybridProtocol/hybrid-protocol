@@ -32,6 +32,7 @@ describe('IndexGovernance', () => {
   const loadFixture = createFixtureLoader(provider, [ownerWallet]);
   let indexHybridToken: IndexHybridToken;
   let indexGovernance: IndexGovernance;
+  let indexGovernanceEmptyProposal: any;
 
   const assetArrayishValues = {
     BTC: convertStringToArrayish('BTC'),
@@ -87,7 +88,6 @@ describe('IndexGovernance', () => {
       duration: indexGovernanceMinDuration * 2,
     },
   };
-  const nullableAddress = '0x0000000000000000000000000000000000000000';
 
   beforeEach(async () => {
     // load fixture
@@ -106,6 +106,14 @@ describe('IndexGovernance', () => {
       .connect(aliceWallet)
       .updateComposition(voteProposalAssets.start.assets, voteProposalAssets.start.weights); // set start composition
     await indexGovernance.addAddressesToMainteiners([aliceWallet.address, bobWallet.address]); // add aliceWallet.address and bobWallet.address to mainteiners
+
+    // get and check indexGovernance empty proposal
+    indexGovernanceEmptyProposal = await indexGovernance.proposal();
+    expect(indexGovernanceEmptyProposal.id).to.be.eq(0);
+    expect(indexGovernanceEmptyProposal.initiator).to.be.eq('0x0000000000000000000000000000000000000000');
+    expect(indexGovernanceEmptyProposal.pros).to.be.eq(0);
+    expect(indexGovernanceEmptyProposal.cons).to.be.eq(0);
+    expect(indexGovernanceEmptyProposal.deadline).to.be.eq(0);
   });
 
   describe('createProposal', () => {
@@ -207,8 +215,7 @@ describe('IndexGovernance', () => {
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id).to.be.eq(0);
-      expect(beforeProposal.initiator).to.be.eq(nullableAddress);
+      expect(beforeProposal).to.be.eql(indexGovernanceEmptyProposal);
 
       // run method createProposal() - successfully
       await expect(
@@ -235,8 +242,7 @@ describe('IndexGovernance', () => {
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id).to.be.eq(0);
-      expect(beforeProposal.initiator).to.be.eq(nullableAddress);
+      expect(beforeProposal).to.be.eql(indexGovernanceEmptyProposal);
 
       // run method createProposal() - successfully
       await expect(
@@ -259,8 +265,7 @@ describe('IndexGovernance', () => {
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id).to.be.eq(0);
-      expect(beforeProposal.initiator).to.be.eq(nullableAddress);
+      expect(beforeProposal).to.be.eql(indexGovernanceEmptyProposal);
 
       // run method createProposal() - successfully
       await expect(
@@ -432,8 +437,32 @@ describe('IndexGovernance', () => {
         indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
       ).not.to.be.reverted;
 
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal.id).to.be.eq(1);
+      expect(beforeProposal.initiator).to.be.eq(aliceWallet.address);
+      expect(beforeProposal.pros).to.be.eq(0);
+      expect(beforeProposal.cons).to.be.eq(0);
+
       // run method finalize() - reverted
       await expect(indexGovernance.connect(otherWallet1).finalize()).to.be.revertedWith(ERRORS.VOTING_IN_PROGRESS);
+
+      // get and check afterProposal
+      const afterProposal = await indexGovernance.proposal();
+      expect(afterProposal).to.be.eql(beforeProposal);
+    });
+
+    it('success - finalize empty proposal', async () => {
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal).to.be.eql(indexGovernanceEmptyProposal);
+
+      // run method finalize() - successfully
+      await expect(indexGovernance.connect(otherWallet1).finalize()).not.to.be.reverted;
+
+      // get and check afterProposal
+      const afterProposal = await indexGovernance.proposal();
+      expect(afterProposal).to.be.eql(beforeProposal);
     });
 
     it('success - proposal.pros <= proposal.cons', async () => {
@@ -461,11 +490,13 @@ describe('IndexGovernance', () => {
       // mine blocks
       await mineBlocks(provider, voteAssets.duration);
 
-      // get and check afterProposal
-      const afterProposal = await indexGovernance.proposal();
-      expect(afterProposal.pros).to.be.eq(prosXHBTAmount);
-      expect(afterProposal.cons).to.be.eq(consXHBTAmount);
-      expect(afterProposal.pros).to.be.lte(afterProposal.cons);
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal.id).to.be.eq(1);
+      expect(beforeProposal.initiator).to.be.eq(aliceWallet.address);
+      expect(beforeProposal.pros).to.be.eq(prosXHBTAmount);
+      expect(beforeProposal.cons).to.be.eq(consXHBTAmount);
+      expect(beforeProposal.pros).to.be.lte(beforeProposal.cons);
 
       // run method finalize() - successfully
       await expect(indexGovernance.connect(otherWallet1).finalize()).not.to.be.reverted;
@@ -473,6 +504,10 @@ describe('IndexGovernance', () => {
       // get afterPortfolioList, value should not changed
       const afterPortfolioList = await getCurrentPortfolio(indexHybridToken, otherWallet1);
       expect(afterPortfolioList).to.eql(beforePortfolioList);
+
+      // get and check afterProposal
+      const afterProposal = await indexGovernance.proposal();
+      expect(afterProposal).to.be.eql(indexGovernanceEmptyProposal);
     });
 
     it('success - proposal.pros > proposal.cons', async () => {
@@ -500,11 +535,13 @@ describe('IndexGovernance', () => {
       // mine blocks
       await mineBlocks(provider, voteAssets.duration);
 
-      // get and check afterProposal
-      const afterProposal = await indexGovernance.proposal();
-      expect(afterProposal.pros).to.be.eq(prosXHBTAmount);
-      expect(afterProposal.cons).to.be.eq(consXHBTAmount);
-      expect(afterProposal.pros).to.be.gt(afterProposal.cons);
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal.id).to.be.eq(1);
+      expect(beforeProposal.initiator).to.be.eq(aliceWallet.address);
+      expect(beforeProposal.pros).to.be.eq(prosXHBTAmount);
+      expect(beforeProposal.cons).to.be.eq(consXHBTAmount);
+      expect(beforeProposal.pros).to.be.gt(beforeProposal.cons);
 
       // run method finalize() - successfully
       await expect(indexGovernance.connect(otherWallet1).finalize()).not.to.be.reverted;
@@ -516,6 +553,44 @@ describe('IndexGovernance', () => {
       for (let i = 0; i < afterPortfolioList.length; i++) {
         expect(afterPortfolioList[i].symbol).to.be.eq(voteAssets.assets[i]);
         expect(afterPortfolioList[i].weight).to.be.eq(voteAssets.weights[i]);
+      }
+
+      // get and check afterProposal
+      const afterProposal = await indexGovernance.proposal();
+      expect(afterProposal).to.be.eql(indexGovernanceEmptyProposal);
+    });
+
+    it('success - get correct proposal id after several finalizes', async () => {
+      // get voteAssets
+      const voteAssets = voteProposalAssets.base;
+
+      // get and check beforeProposal
+      const beforeProposal = await indexGovernance.proposal();
+      expect(beforeProposal).to.be.eql(indexGovernanceEmptyProposal);
+
+      // create Proposal several times
+      for (let i = 0; i < 3; i++) {
+        // run method createProposal() - successfully
+        await expect(
+          indexGovernance
+            .connect(aliceWallet)
+            .createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        ).not.to.be.reverted;
+
+        // get and check afterProposal
+        const afterProposal = await indexGovernance.proposal();
+        expect(afterProposal.id).to.be.eq(beforeProposal.id.add(i + 1));
+        expect(afterProposal.initiator).to.be.eq(aliceWallet.address);
+
+        // mine blocks
+        await mineBlocks(provider, voteAssets.duration);
+
+        // run method finalize() - successfully
+        await expect(indexGovernance.connect(otherWallet1).finalize()).not.to.be.reverted;
+
+        // get and check afterProposal
+        const afterFinalizeProposal = await indexGovernance.proposal();
+        expect(afterFinalizeProposal).to.be.eql(indexGovernanceEmptyProposal);
       }
     });
   });
@@ -657,11 +732,7 @@ describe('IndexGovernance', () => {
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id).to.be.eq(0);
-      expect(beforeProposal.initiator).to.be.eq(nullableAddress);
-      expect(beforeProposal.pros).to.be.eq(0);
-      expect(beforeProposal.cons).to.be.eq(0);
-      expect(beforeProposal.deadline).to.be.eq(0);
+      expect(beforeProposal).to.be.eql(indexGovernanceEmptyProposal);
 
       // run method createProposal() - successfully
       await expect(

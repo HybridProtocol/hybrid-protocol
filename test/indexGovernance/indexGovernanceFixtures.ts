@@ -11,7 +11,7 @@ export interface IndexGovernanceFixture {
   indexGovernance: IndexGovernance;
 }
 
-export const indexGovernanceMinDuration = 25; // blocks
+export const indexGovernanceMinDuration = 12; // blocks
 const overrides = {
   gasLimit: 9999999,
   gasPrice: 1,
