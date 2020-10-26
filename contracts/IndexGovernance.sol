@@ -34,10 +34,10 @@ contract IndexGovernance is Maintenance {
     event Voted(address voter, uint amount, bool decision);
     event ProposalClosed(bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator);
 
-    constructor(address _indexToken, uint _minDuration) public {
+    constructor(address _indexToken, address _stakingToken, uint _minDuration) public {
         require(_minDuration > 0, "IndexGovernance: MIN_DURATION_INVALID");
         indexToken = _indexToken;
-        stakingToken = _indexToken; // TODO: check it
+        stakingToken = _stakingToken;
         minDuration = _minDuration;
     }
 

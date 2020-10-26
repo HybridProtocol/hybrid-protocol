@@ -2,6 +2,7 @@ import chai, { expect } from 'chai';
 import { createFixtureLoader, MockProvider, solidity } from 'ethereum-waffle';
 import { Contract, Wallet } from 'ethers';
 import { IndexHybridToken } from '../../typechain/IndexHybridToken';
+import { HybridToken } from '../../typechain/HybridToken';
 import { IndexGovernance } from '../../typechain/IndexGovernance';
 import { indexGovernanceFixture, indexGovernanceMinDuration } from './indexGovernanceFixtures';
 import { convertStringToArrayish, expandTo18Decimals, mineBlocks } from '../shared/utilities';
@@ -31,6 +32,7 @@ describe('IndexGovernance', () => {
   const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = provider.getWallets();
   const loadFixture = createFixtureLoader(provider, [ownerWallet]);
   let indexHybridToken: IndexHybridToken;
+  let stakingToken: HybridToken;
   let indexGovernance: IndexGovernance;
   let indexGovernanceEmptyProposal: any;
 
@@ -95,16 +97,17 @@ describe('IndexGovernance', () => {
 
     // update contract variables
     indexHybridToken = fixture.indexHybridToken;
+    stakingToken = fixture.stakingToken;
     indexGovernance = fixture.indexGovernance;
 
     // init test action
     await indexHybridToken.addAddressesToMainteiners([aliceWallet.address, indexGovernance.address]); // add aliceWallet.address, indexGovernance.address to mainteiners
     await indexHybridToken
       .connect(aliceWallet)
-      .mintAmount([aliceWallet.address, bobWallet.address, otherWallet1.address], expandTo18Decimals(1000)); // send xHBT to address list
-    await indexHybridToken
-      .connect(aliceWallet)
       .updateComposition(voteProposalAssets.start.assets, voteProposalAssets.start.weights); // set start composition
+    await stakingToken.transfer(aliceWallet.address, expandTo18Decimals(1000)); // transfer sToken tokens to Alice address
+    await stakingToken.transfer(bobWallet.address, expandTo18Decimals(1000)); // transfer sToken tokens to Bob address
+    await stakingToken.transfer(otherWallet1.address, expandTo18Decimals(1000)); // transfer sToken tokens to OtherWallet address
     await indexGovernance.addAddressesToMainteiners([aliceWallet.address, bobWallet.address]); // add aliceWallet.address and bobWallet.address to mainteiners
 
     // get and check indexGovernance empty proposal
@@ -300,12 +303,12 @@ describe('IndexGovernance', () => {
       // mine blocks
       await mineBlocks(provider, voteAssets.duration);
 
-      // set and check amountXHBT
-      const amountXHBT = 10;
-      expect(amountXHBT).to.be.gt(0);
+      // set and check amountStakingToken
+      const amountStakingToken = 10;
+      expect(amountStakingToken).to.be.gt(0);
 
       // run method vote() - reverted
-      await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, true)).to.be.revertedWith(
+      await expect(indexGovernance.connect(otherWallet1).vote(amountStakingToken, true)).to.be.revertedWith(
         ERRORS.VOTING_NOT_IN_PROGRESS,
       );
     });
@@ -319,20 +322,20 @@ describe('IndexGovernance', () => {
         indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
       ).not.to.be.reverted;
 
-      // set and check amountXHBT
-      const amountXHBT = 10;
-      expect(amountXHBT).to.be.gt(0);
+      // set and check amountStakingToken
+      const amountStakingToken = 10;
+      expect(amountStakingToken).to.be.gt(0);
 
-      // get and check currentAllowanceXHBT
-      const currentAllowanceXHBT = await indexHybridToken.allowance(otherWallet1.address, indexGovernance.address);
-      expect(currentAllowanceXHBT).to.be.lt(amountXHBT);
+      // get and check currentAllowanceStakingToken
+      const currentAllowanceStakingToken = await stakingToken.allowance(otherWallet1.address, indexGovernance.address);
+      expect(currentAllowanceStakingToken).to.be.lt(amountStakingToken);
 
-      // get and check beforeBalanceXHBT
-      const beforeBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
-      expect(beforeBalanceXHBT).to.be.gte(amountXHBT);
+      // get and check beforeBalanceStakingToken
+      const beforeBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
+      expect(beforeBalanceStakingToken).to.be.gte(amountStakingToken);
 
       // run method vote() - reverted
-      await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, true)).to.be.revertedWith(
+      await expect(indexGovernance.connect(otherWallet1).vote(amountStakingToken, true)).to.be.revertedWith(
         ERRORS.TRANSFER_FROM,
       );
     });
@@ -346,23 +349,23 @@ describe('IndexGovernance', () => {
         indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
       ).not.to.be.reverted;
 
-      // set and check amountXHBT
-      const amountXHBT = expandTo18Decimals(1000000000);
-      expect(amountXHBT).to.be.gt(0);
+      // set and check amountStakingToken
+      const amountStakingToken = expandTo18Decimals(1000000000);
+      expect(amountStakingToken).to.be.gt(0);
 
-      // increase XHBT allowance to indexGovernance.address
-      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, amountXHBT);
+      // increase stakingToken allowance to indexGovernance.address
+      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, amountStakingToken);
 
-      // get and check currentAllowanceXHBT
-      const currentAllowanceXHBT = await indexHybridToken.allowance(otherWallet1.address, indexGovernance.address);
-      expect(currentAllowanceXHBT).to.be.gte(amountXHBT);
+      // get and check currentAllowanceStakingToken
+      const currentAllowanceStakingToken = await stakingToken.allowance(otherWallet1.address, indexGovernance.address);
+      expect(currentAllowanceStakingToken).to.be.gte(amountStakingToken);
 
-      // get and check beforeBalanceXHBT
-      const beforeBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
-      expect(beforeBalanceXHBT).to.be.lt(amountXHBT);
+      // get and check beforeBalanceStakingToken
+      const beforeBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
+      expect(beforeBalanceStakingToken).to.be.lt(amountStakingToken);
 
       // run method vote() - reverted
-      await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, false)).to.be.revertedWith(
+      await expect(indexGovernance.connect(otherWallet1).vote(amountStakingToken, false)).to.be.revertedWith(
         ERRORS.TRANSFER_FROM,
       );
     });
@@ -382,48 +385,54 @@ describe('IndexGovernance', () => {
       expect(beforeProposal.pros).to.be.eq(0);
       expect(beforeProposal.cons).to.be.eq(0);
 
-      // set prosXHBTList, consXHBTList, totalProsXHBT, totalConsXHBT and totalAmountXHBT
-      const prosXHBTList = [100, 200, 300, 400, 500];
-      const consXHBTList = [200, 300, 400];
-      const totalProsXHBT = prosXHBTList.reduce((totalAmount: number, item: number) => totalAmount + item, 0);
-      const totalConsXHBT = consXHBTList.reduce((totalAmount: number, item: number) => totalAmount + item, 0);
-      const totalAmountXHBT = totalProsXHBT + totalConsXHBT;
-      expect(totalAmountXHBT).to.be.gt(0);
+      // set prosStakingTokenList, consStakingTokenList, totalProsStakingToken, totalConsStakingToken and totalAmountStakingToken
+      const prosStakingTokenList = [100, 200, 300, 400, 500];
+      const consStakingTokenList = [200, 300, 400];
+      const totalProsStakingToken = prosStakingTokenList.reduce(
+        (totalAmount: number, item: number) => totalAmount + item,
+        0,
+      );
+      const totalConsStakingToken = consStakingTokenList.reduce(
+        (totalAmount: number, item: number) => totalAmount + item,
+        0,
+      );
+      const totalAmountStakingToken = totalProsStakingToken + totalConsStakingToken;
+      expect(totalAmountStakingToken).to.be.gt(0);
 
-      // increase XHBT allowance to indexGovernance.address
-      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalAmountXHBT);
+      // increase stakingToken allowance to indexGovernance.address
+      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalAmountStakingToken);
 
-      // get and check currentAllowanceXHBT
-      const currentAllowanceXHBT = await indexHybridToken.allowance(otherWallet1.address, indexGovernance.address);
-      expect(currentAllowanceXHBT).to.be.gte(totalAmountXHBT);
+      // get and check currentAllowanceStakingToken
+      const currentAllowanceStakingToken = await stakingToken.allowance(otherWallet1.address, indexGovernance.address);
+      expect(currentAllowanceStakingToken).to.be.gte(totalAmountStakingToken);
 
-      // get and check beforeBalanceXHBT
-      const beforeBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
-      expect(beforeBalanceXHBT).to.be.gte(totalAmountXHBT);
+      // get and check beforeBalanceStakingToken
+      const beforeBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
+      expect(beforeBalanceStakingToken).to.be.gte(totalAmountStakingToken);
 
       // get and check beforeVotesOfUser
       const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
       expect(beforeVotesOfUser).to.be.eq(0);
 
       // run method vote() several times (decision: true) - successfully
-      for (const amountXHBT of prosXHBTList) {
-        await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, true)).not.to.be.reverted;
+      for (const amountStakingToken of prosStakingTokenList) {
+        await expect(indexGovernance.connect(otherWallet1).vote(amountStakingToken, true)).not.to.be.reverted;
       }
 
       // run method vote() several times (decision: false) - successfully
-      for (const amountXHBT of consXHBTList) {
-        await expect(indexGovernance.connect(otherWallet1).vote(amountXHBT, false)).not.to.be.reverted;
+      for (const amountStakingToken of consStakingTokenList) {
+        await expect(indexGovernance.connect(otherWallet1).vote(amountStakingToken, false)).not.to.be.reverted;
       }
 
       // get and check afterVotesOfUser
       const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser.add(totalAmountXHBT));
+      expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser.add(totalAmountStakingToken));
 
       // get and check afterProposal
       const afterProposal = await indexGovernance.proposal();
       expect(afterProposal.id).to.be.eq(beforeProposal.id);
-      expect(afterProposal.pros).to.be.eq(beforeProposal.pros.add(totalProsXHBT));
-      expect(afterProposal.cons).to.be.eq(beforeProposal.cons.add(totalConsXHBT));
+      expect(afterProposal.pros).to.be.eq(beforeProposal.pros.add(totalProsStakingToken));
+      expect(afterProposal.cons).to.be.eq(beforeProposal.cons.add(totalConsStakingToken));
     });
   });
 
@@ -478,14 +487,14 @@ describe('IndexGovernance', () => {
         indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
       ).not.to.be.reverted;
 
-      // set prosXHBTAmount, consXHBTAmount, totalXHBTAmount, increase XHBT allowance and do votes
-      const prosXHBTAmount = 100;
-      const consXHBTAmount = 200;
-      const totalXHBTAmount = prosXHBTAmount + consXHBTAmount;
-      expect(prosXHBTAmount).to.be.lte(consXHBTAmount);
-      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalXHBTAmount);
-      await expect(indexGovernance.connect(otherWallet1).vote(prosXHBTAmount, true)).not.to.be.reverted;
-      await expect(indexGovernance.connect(otherWallet1).vote(consXHBTAmount, false)).not.to.be.reverted;
+      // set prosStakingTokenAmount, consStakingTokenAmount, totalStakingTokenAmount, increase stakingToken allowance and do votes
+      const prosStakingTokenAmount = 100;
+      const consStakingTokenAmount = 200;
+      const totalStakingTokenAmount = prosStakingTokenAmount + consStakingTokenAmount;
+      expect(prosStakingTokenAmount).to.be.lte(consStakingTokenAmount);
+      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalStakingTokenAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(prosStakingTokenAmount, true)).not.to.be.reverted;
+      await expect(indexGovernance.connect(otherWallet1).vote(consStakingTokenAmount, false)).not.to.be.reverted;
 
       // mine blocks
       await mineBlocks(provider, voteAssets.duration);
@@ -494,8 +503,8 @@ describe('IndexGovernance', () => {
       const beforeProposal = await indexGovernance.proposal();
       expect(beforeProposal.id).to.be.eq(1);
       expect(beforeProposal.initiator).to.be.eq(aliceWallet.address);
-      expect(beforeProposal.pros).to.be.eq(prosXHBTAmount);
-      expect(beforeProposal.cons).to.be.eq(consXHBTAmount);
+      expect(beforeProposal.pros).to.be.eq(prosStakingTokenAmount);
+      expect(beforeProposal.cons).to.be.eq(consStakingTokenAmount);
       expect(beforeProposal.pros).to.be.lte(beforeProposal.cons);
 
       // run method finalize() - successfully
@@ -523,14 +532,14 @@ describe('IndexGovernance', () => {
         indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
       ).not.to.be.reverted;
 
-      // set prosXHBTAmount, consXHBTAmount, totalXHBTAmount, increase XHBT allowance and do votes
-      const prosXHBTAmount = 200;
-      const consXHBTAmount = 100;
-      const totalXHBTAmount = prosXHBTAmount + consXHBTAmount;
-      expect(prosXHBTAmount).to.be.gt(consXHBTAmount);
-      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalXHBTAmount);
-      await expect(indexGovernance.connect(otherWallet1).vote(prosXHBTAmount, true)).not.to.be.reverted;
-      await expect(indexGovernance.connect(otherWallet1).vote(consXHBTAmount, false)).not.to.be.reverted;
+      // set prosStakingTokenAmount, consStakingTokenAmount, totalStakingTokenAmount, increase stakingToken allowance and do votes
+      const prosStakingTokenAmount = 200;
+      const consStakingTokenAmount = 100;
+      const totalStakingTokenAmount = prosStakingTokenAmount + consStakingTokenAmount;
+      expect(prosStakingTokenAmount).to.be.gt(consStakingTokenAmount);
+      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, totalStakingTokenAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(prosStakingTokenAmount, true)).not.to.be.reverted;
+      await expect(indexGovernance.connect(otherWallet1).vote(consStakingTokenAmount, false)).not.to.be.reverted;
 
       // mine blocks
       await mineBlocks(provider, voteAssets.duration);
@@ -539,8 +548,8 @@ describe('IndexGovernance', () => {
       const beforeProposal = await indexGovernance.proposal();
       expect(beforeProposal.id).to.be.eq(1);
       expect(beforeProposal.initiator).to.be.eq(aliceWallet.address);
-      expect(beforeProposal.pros).to.be.eq(prosXHBTAmount);
-      expect(beforeProposal.cons).to.be.eq(consXHBTAmount);
+      expect(beforeProposal.pros).to.be.eq(prosStakingTokenAmount);
+      expect(beforeProposal.cons).to.be.eq(consStakingTokenAmount);
       expect(beforeProposal.pros).to.be.gt(beforeProposal.cons);
 
       // run method finalize() - successfully
@@ -605,11 +614,11 @@ describe('IndexGovernance', () => {
         indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
       ).not.to.be.reverted;
 
-      // set xHBTAmount, increase XHBT allowance and do votes
-      const xHBTAmount = 500;
-      expect(xHBTAmount).to.be.gt(0);
-      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, xHBTAmount);
-      await expect(indexGovernance.connect(otherWallet1).vote(xHBTAmount, true)).not.to.be.reverted;
+      // set stakingTokenAmount, increase stakingToken allowance and do votes
+      const stakingTokenAmount = 500;
+      expect(stakingTokenAmount).to.be.gt(0);
+      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, stakingTokenAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(stakingTokenAmount, true)).not.to.be.reverted;
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
@@ -617,12 +626,12 @@ describe('IndexGovernance', () => {
 
       // get and check beforeVotesOfUser
       const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(beforeVotesOfUser).to.be.eq(xHBTAmount);
+      expect(beforeVotesOfUser).to.be.eq(stakingTokenAmount);
 
       // run method claimFunds() - reverted
-      await expect(indexGovernance.connect(otherWallet1).claimFunds(xHBTAmount, beforeProposal.id)).to.be.revertedWith(
-        ERRORS.VOTING_IN_PROGRESS,
-      );
+      await expect(
+        indexGovernance.connect(otherWallet1).claimFunds(stakingTokenAmount, beforeProposal.id),
+      ).to.be.revertedWith(ERRORS.VOTING_IN_PROGRESS);
 
       // get and check afterVotesOfUser
       const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
@@ -638,46 +647,46 @@ describe('IndexGovernance', () => {
         indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
       ).not.to.be.reverted;
 
-      // set xHBTAmount, increase XHBT allowance and do votes
-      const xHBTAmount = 500;
-      expect(xHBTAmount).to.be.gt(0);
-      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, xHBTAmount);
-      await expect(indexGovernance.connect(otherWallet1).vote(xHBTAmount, true)).not.to.be.reverted;
+      // set stakingTokenAmount, increase stakingToken allowance and do votes
+      const stakingTokenAmount = 500;
+      expect(stakingTokenAmount).to.be.gt(0);
+      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, stakingTokenAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(stakingTokenAmount, true)).not.to.be.reverted;
 
-      // get and check beforeIndexGovernanceBalanceXHBT
-      const beforeIndexGovernanceBalanceXHBT = await indexHybridToken.balanceOf(indexGovernance.address);
-      expect(beforeIndexGovernanceBalanceXHBT).to.be.eq(xHBTAmount);
+      // get and check beforeIndexGovernanceBalanceStakingToken
+      const beforeIndexGovernanceBalanceStakingToken = await stakingToken.balanceOf(indexGovernance.address);
+      expect(beforeIndexGovernanceBalanceStakingToken).to.be.eq(stakingTokenAmount);
 
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
       expect(beforeProposal.id).to.be.eq(1);
 
-      // get beforeBalanceXHBT
-      const beforeBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
+      // get beforeBalanceStakingToken
+      const beforeBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
 
       // get and check beforeVotesOfUser
       const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(beforeVotesOfUser).to.be.eq(xHBTAmount);
+      expect(beforeVotesOfUser).to.be.eq(stakingTokenAmount);
 
       // mine blocks
       await mineBlocks(provider, voteAssets.duration);
 
       // run method claimFunds() - reverted
-      const claimedXHBTAmount = xHBTAmount - 200;
-      await expect(indexGovernance.connect(otherWallet1).claimFunds(claimedXHBTAmount, beforeProposal.id)).not.to.be
-        .reverted;
+      const claimedStakingTokenAmount = stakingTokenAmount - 200;
+      await expect(indexGovernance.connect(otherWallet1).claimFunds(claimedStakingTokenAmount, beforeProposal.id)).not
+        .to.be.reverted;
 
-      // get and check afterBalanceXHBT
-      const afterBalanceXHBT = await indexHybridToken.balanceOf(otherWallet1.address);
-      expect(afterBalanceXHBT).to.be.eq(beforeBalanceXHBT.add(claimedXHBTAmount));
+      // get and check afterBalanceStakingToken
+      const afterBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
+      expect(afterBalanceStakingToken).to.be.eq(beforeBalanceStakingToken.add(claimedStakingTokenAmount));
 
       // get and check afterVotesOfUser
       const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(afterVotesOfUser).to.be.eq(xHBTAmount - claimedXHBTAmount);
+      expect(afterVotesOfUser).to.be.eq(stakingTokenAmount - claimedStakingTokenAmount);
 
-      // get and check beforeIndexGovernanceBalanceXHBT
-      const afterIndexGovernanceBalanceXHBT = await indexHybridToken.balanceOf(indexGovernance.address);
-      expect(afterIndexGovernanceBalanceXHBT).to.be.eq(xHBTAmount - claimedXHBTAmount);
+      // get and check afterIndexGovernanceBalanceStakingToken
+      const afterIndexGovernanceBalanceStakingToken = await stakingToken.balanceOf(indexGovernance.address);
+      expect(afterIndexGovernanceBalanceStakingToken).to.be.eq(stakingTokenAmount - claimedStakingTokenAmount);
     });
   });
 
@@ -690,8 +699,8 @@ describe('IndexGovernance', () => {
 
   describe('stakingToken', () => {
     it('success', async () => {
-      const stakingToken = await indexGovernance.stakingToken();
-      expect(stakingToken).to.be.eq(indexHybridToken.address);
+      const sToken = await indexGovernance.stakingToken();
+      expect(sToken).to.be.eq(stakingToken.address);
     });
   });
 
@@ -713,15 +722,15 @@ describe('IndexGovernance', () => {
       const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
       expect(beforeVotesOfUser).to.be.eq(0);
 
-      // set xHBTAmount, increase XHBT allowance and do votes
-      const xHBTAmount = 500;
-      expect(xHBTAmount).to.be.gt(0);
-      await indexHybridToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, xHBTAmount);
-      await expect(indexGovernance.connect(otherWallet1).vote(xHBTAmount, true)).not.to.be.reverted;
+      // set stakingTokenAmount, increase stakingToken allowance and do votes
+      const stakingTokenAmount = 500;
+      expect(stakingTokenAmount).to.be.gt(0);
+      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, stakingTokenAmount);
+      await expect(indexGovernance.connect(otherWallet1).vote(stakingTokenAmount, true)).not.to.be.reverted;
 
       // get and check afterVotesOfUser
       const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser.add(xHBTAmount));
+      expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser.add(stakingTokenAmount));
     });
   });
 
