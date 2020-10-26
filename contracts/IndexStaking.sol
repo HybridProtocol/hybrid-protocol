@@ -22,6 +22,9 @@ contract IndexStaking {
     uint public accumulatedReward;
     uint public startBlock;
 
+    event Deposited(address account, uint amount);
+    event Withdrawn(address account, uint deposited, uint reward);
+
     constructor(address _stakingTokenAddress, address _rewardTokenAddress) public {
         stakingToken = _stakingTokenAddress;
         rewardToken = _rewardTokenAddress;
@@ -36,24 +39,26 @@ contract IndexStaking {
         stake[msg.sender] = _amount;
         stakedSnapshot[msg.sender] = staked;
         activeStakeDeposits = activeStakeDeposits.add(_amount);
+        emit Deposited(msg.sender, _amount);
     }
 
-    function withdraw() public {
-        uint deposited = stake[msg.sender];
+    function withdraw(uint _amount) external {
+        (uint deposited,) = withdraw();
+        deposit(deposited.sub(_amount));
+    }
+
+    function withdraw() public returns (uint deposited, uint userReward) {
+        deposited = stake[msg.sender];
         uint reward = _calculateReward();
         if (activeStakeDeposits != 0) {
             staked = staked.add(reward.div(activeStakeDeposits));
         }
-        uint userReward = deposited.mul(staked.sub(stakedSnapshot[msg.sender]));
+        userReward = deposited.mul(staked.sub(stakedSnapshot[msg.sender]));
         activeStakeDeposits = activeStakeDeposits.sub(deposited);
         stake[msg.sender] = 0;
         SafeTransfer.sendERC20(address(stakingToken), msg.sender, deposited);
         SafeTransfer.sendERC20(address(rewardToken), msg.sender, userReward);
-    }
-
-    function withdraw(uint _amount) external {
-        withdraw();
-        deposit(_amount);
+        emit Withdrawn(msg.sender, deposited, userReward);
     }
 
     function _calculateReward() private returns (uint reward) {
