@@ -95,7 +95,7 @@ contract VestingSwap is Ownable {
         uint availableAmount = availableAmountFor(_presale);
         require(_amount <= availableAmount.sub(swap[_presale].swapped), "VestingSwap: VESTING_LIMIT");
         ISaleHybridToken(_presale).burnFor(msg.sender, _amount);
-        require(SafeTransfer.sendERC20(address(HBT), msg.sender, _amount), "VestingSwap: SEND_ERC20");
+        SafeTransfer.sendERC20(address(HBT), msg.sender, _amount);
         swappedAmountOf[msg.sender] = swappedAmountOf[msg.sender].add(_amount);
         emit Swap(msg.sender, _amount);
     }
