@@ -24,6 +24,9 @@ contract IndexGovernance is Maintenance {
         address initiator;
         uint pros;
         uint cons;
+        string title;
+        string description;
+        string link;
     }
 
     Proposal public proposal;
@@ -39,7 +42,10 @@ contract IndexGovernance is Maintenance {
     function createProposal(
         bytes8[] memory _assets, 
         uint16[] memory _weights,
-        uint _duration
+        uint _duration,
+        string memory _title,
+        string memory _description,
+        string memory _link
     ) public onlyMaintainers {
         require(_assets.length == _weights.length, "IndexGovernance: INVALID_LENGTH");
         require(_duration <= 3 * 6500 && _duration > 6500, "IndexGovernance: DURATION_INVALID");
@@ -53,7 +59,17 @@ contract IndexGovernance is Maintenance {
         }
         require(totalWeights == 10000, "IndexGovernance: TOTAL_WEIGHTS");
 
-        proposal = Proposal(++lastProposalId, _assets, _weights, block.number.add(_duration), msg.sender, 0, 0);
+        proposal = Proposal(
+            ++lastProposalId,
+            _assets, _weights,
+            block.number.add(_duration),
+            msg.sender,
+            0,
+            0,
+            _title,
+            _description,
+            _link
+        );
         emit ProposalCreated(_assets, _weights, _duration, msg.sender);
     }
 
