@@ -94,7 +94,7 @@ export async function mineBlock(provider: Web3Provider, timestamp?: number): Pro
 }
 
 export async function mineBlocks(provider: Web3Provider, blockCount: number): Promise<void> {
-  for (let ind = 0; ind < blockCount; ind++) {
+  for (let i = 0; i < blockCount; i++) {
     await mineBlock(provider);
   }
 }

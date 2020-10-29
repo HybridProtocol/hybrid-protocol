@@ -11,7 +11,7 @@ import "../libraries/SafeTransfer.sol";
 contract IndexGovernance is Maintenance {
     using SafeMath for uint256;
 
-    uint internal minDuration; // blocks
+    uint private minDuration; // blocks
 
     address public indexToken;
     address public stakingToken;
