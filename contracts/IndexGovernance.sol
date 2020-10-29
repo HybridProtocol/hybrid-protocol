@@ -31,9 +31,9 @@ contract IndexGovernance is Maintenance {
 
     Proposal public proposal;
 
-    event ProposalCreated(bytes8[] assets, uint16[] weights, uint votingDuration, address initiator);
+    event ProposalCreated(bytes8[] assets, uint16[] weights, uint votingDuration, address initiator, string title, string description, string link);
     event Voted(address voter, uint amount, bool decision);
-    event ProposalClosed(bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator);
+    event ProposalClosed(bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator, string title, string description, string link);
 
     constructor(address _indexToken) public {
         indexToken = _indexToken;
@@ -70,7 +70,7 @@ contract IndexGovernance is Maintenance {
             _description,
             _link
         );
-        emit ProposalCreated(_assets, _weights, _duration, msg.sender);
+        emit ProposalCreated(_assets, _weights, _duration, msg.sender, _title, _description, _link);
     }
 
     function vote(uint _amount, bool _decision) public {
@@ -90,7 +90,17 @@ contract IndexGovernance is Maintenance {
         if (proposal.pros > proposal.cons) {
             IIndexHybridToken(indexToken).updateComposition(proposal.assets, proposal.weights);
         }
-        emit ProposalClosed(proposal.pros > proposal.cons,proposal.assets,proposal.weights,proposal.pros,proposal.cons,msg.sender);
+        emit ProposalClosed(
+            proposal.pros > proposal.cons,
+            proposal.assets,
+            proposal.weights,
+            proposal.pros,
+            proposal.cons,
+            msg.sender,
+            proposal.title,
+            proposal.description,
+            proposal.link
+        );
         delete proposal;
     }
 
