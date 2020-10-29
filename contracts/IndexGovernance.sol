@@ -59,7 +59,7 @@ contract IndexGovernance is Maintenance {
 
     function vote(uint _amount, bool _decision) public {
         require(proposal.deadline > block.number, "IndexGovernance: VOTING_NOT_IN_PROGRESS");
-        require(SafeTransfer.transferFromERC20(address(stakingToken), msg.sender, address(this), _amount), "IndexGovernance: TRANSFER_FROM");
+        SafeTransfer.transferFromERC20(address(stakingToken), msg.sender, address(this), _amount);
         if (_decision) {
             proposal.pros = proposal.pros.add(_amount);
         } else {
@@ -83,7 +83,7 @@ contract IndexGovernance is Maintenance {
             require(proposal.deadline > block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         }
         votesOfUserByProposalId[_proposalId][msg.sender] = votesOfUserByProposalId[_proposalId][msg.sender].sub(_amount);
-        require(SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount), "IndexGovernance: SEND_ERC20");
+        SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount);
     }
 
 }
