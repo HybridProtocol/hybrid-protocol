@@ -6,6 +6,10 @@ export function expandTo18Decimals(n: number): BigNumber {
   return bigNumberify(n).mul(bigNumberify(10).pow(18));
 }
 
+export function expandFrom18Decimals(n: BigNumber): number {
+  return bigNumberify(n).div(bigNumberify(10).pow(18)).toNumber();
+}
+
 export function expandBigToDecimals(n: BigNumber, d: number): BigNumber {
   return n.mul(bigNumberify(10).pow(d));
 }
@@ -74,7 +78,7 @@ export function parseBigNumbers(property: string, value: string | undefined, dec
   return array.map((v, i) => parseBigNumber(`${property}[${i}]`, v, decimals));
 }
 
-export async function mineBlock(provider: Web3Provider, timestamp: number): Promise<void> {
+export async function mineBlock(provider: Web3Provider, timestamp?: number): Promise<void> {
   await new Promise(async (resolve, reject) => {
     (provider._web3Provider.sendAsync as any)(
       { jsonrpc: '2.0', method: 'evm_mine', params: [timestamp] },
@@ -87,4 +91,10 @@ export async function mineBlock(provider: Web3Provider, timestamp: number): Prom
       },
     );
   });
+}
+
+export async function mineBlocks(provider: Web3Provider, blockCount: number): Promise<void> {
+  for (let ind = 0; ind < blockCount; ind++) {
+    await mineBlock(provider);
+  }
 }

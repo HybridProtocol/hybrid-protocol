@@ -14,7 +14,7 @@ contract Presale is Ownable {
     IERC20 USDC;
     ISaleHybridToken SHBT;
 
-    uint internal constant duration = 6500 * 5; // blocks
+    uint internal duration; // blocks
 
     uint internal rate;
     uint internal startBlock;
@@ -27,9 +27,10 @@ contract Presale is Ownable {
 
     event Sold(address account, uint amount);
 
-    constructor(address _USDC, address _SHBT) public {
+    constructor(address _USDC, address _SHBT, uint _duration) public {
         USDC = IERC20(_USDC);
         SHBT = ISaleHybridToken(_SHBT);
+        duration = _duration;
     }
 
     function start() external onlyOwner {
@@ -39,7 +40,7 @@ contract Presale is Ownable {
 
     function burn() external onlyOwner {
         require(block.number > startBlock + duration, "Presale: INVALID_DATE");
-        uint unreleasedAmount = totalLimit.sub(SHBT.balanceOf(address(this)));
+        uint unreleasedAmount = SHBT.balanceOf(address(this));
         SHBT.burnFor(address(this), unreleasedAmount);
     }
 
@@ -49,13 +50,14 @@ contract Presale is Ownable {
 
     function buy(uint _amountUSDC) external {
         require(block.number <= startBlock + duration, "Presale: INVALID_DATE");
-        require(_amountUSDC > 0, "Presale: ZERO_AMOUNT_USDC");
         uint availableAmountSHBT = purchasedLimit.sub(purchasedAmountOf[msg.sender]);
         uint amountSHBT = _amountUSDC.mul(PresaleConstants.ONE_HBT_IN_WEI).div(rate);
         if (amountSHBT > availableAmountSHBT) {
-            _amountUSDC = amountSHBT.sub(availableAmountSHBT).mul(rate);
             amountSHBT = availableAmountSHBT;
+            _amountUSDC = amountSHBT.mul(rate).div(PresaleConstants.ONE_HBT_IN_WEI);
         }
+        require(_amountUSDC > 0, "Presale: ZERO_AMOUNT_USDC");
+        require(amountSHBT > 0, "Presale: ZERO_AMOUNT_SHBT");
         SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC);
         SafeTransfer.sendERC20(address(SHBT), msg.sender, amountSHBT);
         purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(amountSHBT);
