@@ -24,13 +24,16 @@ contract IndexGovernance is Maintenance {
         address initiator;
         uint pros;
         uint cons;
+        string title;
+        string description;
+        string link;
     }
 
     Proposal public proposal;
 
-    event ProposalCreated(bytes8[] assets, uint16[] weights, uint votingDuration, address initiator);
+    event ProposalCreated(uint id, bytes8[] assets, uint16[] weights, uint votingDuration, address initiator, string title, string description, string link);
     event Voted(address voter, uint amount, bool decision);
-    event ProposalClosed(bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator);
+    event ProposalClosed(uint id, bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator, string title, string description, string link);
 
     constructor(address _indexToken) public {
         indexToken = _indexToken;
@@ -39,7 +42,10 @@ contract IndexGovernance is Maintenance {
     function createProposal(
         bytes8[] memory _assets, 
         uint16[] memory _weights,
-        uint _duration
+        uint _duration,
+        string memory _title,
+        string memory _description,
+        string memory _link
     ) public onlyMaintainers {
         require(_assets.length == _weights.length, "IndexGovernance: INVALID_LENGTH");
         require(_duration <= 3 * 6500 && _duration > 6500, "IndexGovernance: DURATION_INVALID");
@@ -53,8 +59,18 @@ contract IndexGovernance is Maintenance {
         }
         require(totalWeights == 10000, "IndexGovernance: TOTAL_WEIGHTS");
 
-        proposal = Proposal(++lastProposalId, _assets, _weights, block.number.add(_duration), msg.sender, 0, 0);
-        emit ProposalCreated(_assets, _weights, _duration, msg.sender);
+        proposal = Proposal(
+            ++lastProposalId,
+            _assets, _weights,
+            block.number.add(_duration),
+            msg.sender,
+            0,
+            0,
+            _title,
+            _description,
+            _link
+        );
+        emit ProposalCreated(proposal.id, _assets, _weights, _duration, msg.sender, _title, _description, _link);
     }
 
     function vote(uint _amount, bool _decision) public {
@@ -74,7 +90,18 @@ contract IndexGovernance is Maintenance {
         if (proposal.pros > proposal.cons) {
             IIndexHybridToken(indexToken).updateComposition(proposal.assets, proposal.weights);
         }
-        emit ProposalClosed(proposal.pros > proposal.cons,proposal.assets,proposal.weights,proposal.pros,proposal.cons,msg.sender);
+        emit ProposalClosed(
+            proposal.id,
+            proposal.pros > proposal.cons,
+            proposal.assets,
+            proposal.weights,
+            proposal.pros,
+            proposal.cons,
+            msg.sender,
+            proposal.title,
+            proposal.description,
+            proposal.link
+        );
         delete proposal;
     }
 
