@@ -85,4 +85,226 @@ describe('IndexStaking', () => {
       expect(rewardSupply).to.be.eq(IndexStakingParams.rewardSupply);
     });
   });
+
+  describe('deposit', () => {
+    it('fail - invalid transferFromERC20 - not enough allowance, enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
+      // set and check amountSToken
+      const amountSToken = expandTo18Decimals(150);
+      expect(amountSToken).to.be.gt(0);
+
+      // get and check currentAllowanceSToken
+      const currentAllowanceSToken = await sToken.allowance(aliceWallet.address, indexStaking.address);
+      expect(currentAllowanceSToken).to.be.lt(amountSToken);
+
+      // get and check beforeBalanceSToken
+      const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(beforeBalanceSToken).to.be.gte(amountSToken);
+
+      // get and check beforeStake
+      const beforeStake = await indexStaking.stake(aliceWallet.address);
+      expect(beforeStake).to.be.eq(0);
+
+      // run method deposit() - reverted
+      await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).to.be.revertedWith(
+        ERRORS.SAFE_TRANSFER_TRANSFER_FROM,
+      );
+
+      // get and check afterStake
+      const afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(beforeStake);
+
+      // get and check afterBalanceSToken
+      const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken);
+    });
+
+    it('fail - invalid transferFromERC20 - enough allowance, not enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
+      // set and check amountSToken
+      const amountSToken = expandTo18Decimals(1500);
+      expect(amountSToken).to.be.gt(0);
+
+      // increase sToken allowance to indexStaking.address
+      await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+
+      // get and check currentAllowanceSToken
+      const currentAllowanceSToken = await sToken.allowance(aliceWallet.address, indexStaking.address);
+      expect(currentAllowanceSToken).to.be.gte(amountSToken);
+
+      // get and check beforeBalanceSToken
+      const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(beforeBalanceSToken).to.be.lt(amountSToken);
+
+      // get and check beforeStake
+      const beforeStake = await indexStaking.stake(aliceWallet.address);
+      expect(beforeStake).to.be.eq(0);
+
+      // run method deposit() - reverted
+      await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).to.be.revertedWith(
+        ERRORS.SAFE_TRANSFER_TRANSFER_FROM,
+      );
+
+      // get and check afterStake
+      const afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(beforeStake);
+
+      // get and check afterBalanceSToken
+      const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken);
+    });
+
+    it('success - amountSToken = 0, current stake = 0', async () => {
+      // set and check amountSToken
+      const amountSToken = expandTo18Decimals(0);
+      expect(amountSToken).to.be.eq(0);
+
+      // get and check currentAllowanceSToken
+      const currentAllowanceSToken = await sToken.allowance(aliceWallet.address, indexStaking.address);
+      expect(currentAllowanceSToken).to.be.gte(amountSToken);
+
+      // get and check beforeBalanceSToken
+      const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(beforeBalanceSToken).to.be.gte(amountSToken);
+
+      // get and check beforeStake
+      const beforeStake = await indexStaking.stake(aliceWallet.address);
+      expect(beforeStake).to.be.eq(0);
+
+      // get and check beforeStakedSnapshot
+      const beforeStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(beforeStakedSnapshot).to.be.eq(0);
+
+      // get and check beforeActiveStakeDeposits
+      const beforeActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(beforeActiveStakeDeposits).to.be.eq(0);
+
+      // get and check beforeIndexStakingBalanceSToken
+      const beforeIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
+      expect(beforeIndexStakingBalanceSToken).to.be.eq(0);
+
+      // run method deposit() - successfully
+      await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
+
+      // get and check afterIndexStakingBalanceSToken
+      const afterIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
+      expect(afterIndexStakingBalanceSToken).to.be.eq(beforeIndexStakingBalanceSToken);
+
+      // get and check afterActiveStakeDeposits
+      const afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(afterActiveStakeDeposits).to.be.eq(beforeActiveStakeDeposits);
+
+      // get and check afterStakedSnapshot
+      const afterStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(afterStakedSnapshot).to.be.eq(beforeStakedSnapshot);
+
+      // get and check afterStake
+      const afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(beforeStake);
+      expect(afterStake).to.be.eq(amountSToken);
+
+      // get and check afterBalanceSToken
+      const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken);
+    });
+
+    it('success - amountSToken > 0, current stake = 0', async () => {
+      // set and check amountSToken
+      const amountSToken = expandTo18Decimals(150);
+      expect(amountSToken).to.be.gt(0);
+
+      // increase sToken allowance to indexStaking.address
+      await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+
+      // get and check currentAllowanceSToken
+      const currentAllowanceSToken = await sToken.allowance(aliceWallet.address, indexStaking.address);
+      expect(currentAllowanceSToken).to.be.gte(amountSToken);
+
+      // get and check beforeBalanceSToken
+      const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(beforeBalanceSToken).to.be.gte(amountSToken);
+
+      // get and check beforeStake
+      const beforeStake = await indexStaking.stake(aliceWallet.address);
+      expect(beforeStake).to.be.eq(0);
+
+      // get and check beforeStakedSnapshot
+      const beforeStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(beforeStakedSnapshot).to.be.eq(0);
+
+      // get and check beforeActiveStakeDeposits
+      const beforeActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(beforeActiveStakeDeposits).to.be.eq(0);
+
+      // get and check beforeIndexStakingBalanceSToken
+      const beforeIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
+      expect(beforeIndexStakingBalanceSToken).to.be.eq(0);
+
+      // run method deposit() - successfully
+      await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
+
+      // get and check afterIndexStakingBalanceSToken
+      const afterIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
+      expect(afterIndexStakingBalanceSToken).to.be.eq(beforeIndexStakingBalanceSToken.add(amountSToken));
+
+      // get and check afterActiveStakeDeposits
+      const afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(afterActiveStakeDeposits).to.be.eq(beforeActiveStakeDeposits.add(amountSToken));
+
+      // get and check afterStakedSnapshot
+      const afterStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(afterStakedSnapshot).to.be.eq(beforeStakedSnapshot);
+
+      // get and check afterStake
+      const afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).not.to.be.eq(beforeStake);
+      expect(afterStake).to.be.eq(amountSToken);
+
+      // get and check afterBalanceSToken
+      const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.sub(amountSToken));
+    });
+
+    it('success - amountSToken = 0, current stake > 0', async () => {
+      // TODO
+    });
+
+    it('success - amountSToken > 0, current stake > 0', async () => {
+      // TODO
+    });
+  });
+
+  describe('stake', () => {
+    it('success', async () => {
+      // get and check beforeStake
+      const beforeStake = await indexStaking.stake(aliceWallet.address);
+      expect(beforeStake).to.be.eq(0);
+
+      // increase sToken allowance to indexStaking.address and run method deposit() - successfully
+      const depositAmountSToken = expandTo18Decimals(100);
+      await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, depositAmountSToken);
+      await expect(indexStaking.connect(aliceWallet).deposit(depositAmountSToken)).not.to.be.reverted;
+
+      // get and check afterStake
+      let afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(depositAmountSToken);
+
+      // increase sToken allowance to indexStaking.address and run method withdraw(withdrawAmountSToken) - successfully
+      const withdrawAmountSToken = expandTo18Decimals(30);
+      expect(withdrawAmountSToken).to.be.lt(afterStake);
+      const remainderStake = afterStake.sub(withdrawAmountSToken);
+      expect(remainderStake).to.be.gt(0);
+      await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, remainderStake);
+      await expect(indexStaking.connect(aliceWallet).withdraw(withdrawAmountSToken)).not.to.be.reverted;
+
+      // get and check afterStake
+      afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(remainderStake);
+
+      // run method withdraw() - successfully
+      await expect(indexStaking.connect(aliceWallet)['withdraw()']()).not.to.be.reverted;
+
+      // get and check afterStake
+      afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(0);
+    });
+  });
 });
