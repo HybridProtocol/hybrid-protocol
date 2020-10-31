@@ -4,6 +4,7 @@ import { expandTo18Decimals } from '../shared/utilities';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexStaking } from '../../typechain/IndexStaking';
 import { indexStakingFixture, IndexStakingParams } from './indexStakingFixtures';
+import { BigNumber } from 'ethers/utils';
 
 chai.use(solidity);
 
@@ -305,6 +306,71 @@ describe('IndexStaking', () => {
       // get and check afterStake
       afterStake = await indexStaking.stake(aliceWallet.address);
       expect(afterStake).to.be.eq(0);
+    });
+  });
+
+  describe('activeStakeDeposits', () => {
+    it('success', async () => {
+      // get and check beforeActiveStakeDeposits
+      const beforeActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(beforeActiveStakeDeposits).to.be.eq(0);
+
+      // set walletDataList
+      const walletDataList = [
+        { wallet: aliceWallet, amountSToken: expandTo18Decimals(100) },
+        { wallet: bobWallet, amountSToken: expandTo18Decimals(50) },
+        { wallet: eveWallet, amountSToken: expandTo18Decimals(25) },
+      ];
+
+      // set expectedActiveStakeDeposits
+      let expectedActiveStakeDeposits = new BigNumber(0);
+
+      // deposit staking token for walletDataList, check activeStakeDeposits
+      for (const walletData of walletDataList) {
+        // get and check beforeStake
+        const beforeStake = await indexStaking.stake(walletData.wallet.address);
+        expect(beforeStake).to.be.eq(0);
+
+        // increase sToken allowance to indexStaking.address and run method deposit() - successfully
+        await sToken.connect(walletData.wallet).increaseAllowance(indexStaking.address, walletData.amountSToken);
+        await expect(indexStaking.connect(walletData.wallet).deposit(walletData.amountSToken)).not.to.be.reverted;
+
+        // update expectedActiveStakeDeposits
+        expectedActiveStakeDeposits = expectedActiveStakeDeposits.add(walletData.amountSToken);
+
+        // get and check afterActiveStakeDeposits
+        const afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+        expect(afterActiveStakeDeposits).to.be.eq(expectedActiveStakeDeposits);
+
+        // get and check afterStake
+        const afterStake = await indexStaking.stake(walletData.wallet.address);
+        expect(afterStake).to.be.eq(walletData.amountSToken);
+      }
+
+      // withdraw staking token for walletDataList, check activeStakeDeposits
+      for (const walletData of walletDataList) {
+        // get and check beforeStake
+        const beforeStake = await indexStaking.stake(walletData.wallet.address);
+        expect(beforeStake).to.be.gt(0);
+
+        // run method withdraw() - successfully
+        await expect(indexStaking.connect(walletData.wallet)['withdraw()']()).not.to.be.reverted;
+
+        // update expectedActiveStakeDeposits
+        expectedActiveStakeDeposits = expectedActiveStakeDeposits.sub(beforeStake);
+
+        // get and check afterActiveStakeDeposits
+        const afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+        expect(afterActiveStakeDeposits).to.be.eq(expectedActiveStakeDeposits);
+
+        // get and check afterStake
+        const afterStake = await indexStaking.stake(walletData.wallet.address);
+        expect(afterStake).to.be.eq(0);
+      }
+
+      // get and check afterActiveStakeDeposits
+      const afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(afterActiveStakeDeposits).to.be.eq(0);
     });
   });
 });
