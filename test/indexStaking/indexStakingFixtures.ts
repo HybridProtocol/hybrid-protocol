@@ -17,7 +17,7 @@ const overrides = {
   gasPrice: 1,
 };
 export const IndexStakingParams = {
-  duration: 3 * 365 * 6500, // blocks
+  duration: 100, // blocks
   totalSupply: expandTo18Decimals(100000000),
   rewardSupply: expandTo18Decimals((48 * 100000000) / 100),
 };
@@ -50,6 +50,9 @@ export async function indexStakingFixture(provider: Web3Provider, [wallet]: Wall
   const indexStaking = await new IndexStakingFactory(wallet).deploy(
     stakingToken.address,
     rewardToken.address,
+    IndexStakingParams.duration,
+    IndexStakingParams.totalSupply,
+    IndexStakingParams.rewardSupply,
     overrides,
   );
   return {

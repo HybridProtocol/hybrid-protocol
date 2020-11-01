@@ -7,9 +7,9 @@ import "../libraries/SafeTransfer.sol";
 contract IndexStaking {
     using SafeMath for uint256;
 
-    uint public constant duration = 3 * 365 * 6500; // blocks
-    uint public constant totalSupply = 100000000 * 10**18;
-    uint public constant rewardSupply = 48 * totalSupply / 100;
+    uint public duration; // blocks
+    uint public totalSupply;
+    uint public rewardSupply;
 
     address public stakingToken;
     address public rewardToken;
@@ -25,9 +25,12 @@ contract IndexStaking {
     event Deposited(address account, uint amount);
     event Withdrawn(address account, uint deposited, uint reward);
 
-    constructor(address _stakingTokenAddress, address _rewardTokenAddress) public {
+    constructor(address _stakingTokenAddress, address _rewardTokenAddress, uint _duration, uint _totalSupply, uint _rewardSupply) public {
         stakingToken = _stakingTokenAddress;
         rewardToken = _rewardTokenAddress;
+        duration = _duration;
+        totalSupply = _totalSupply;
+        rewardSupply = _rewardSupply;
         startBlock = block.number;
     }
 
@@ -67,6 +70,8 @@ contract IndexStaking {
                 .mul(block.number)
                 .mul(block.number.sub(startBlock))
                 .div(startBlock.add(duration).mul(duration));
+        } else {
+            reward = rewardSupply;
         }
         reward -= accumulatedReward;
         accumulatedReward += reward;
