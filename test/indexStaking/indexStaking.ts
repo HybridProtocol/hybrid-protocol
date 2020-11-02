@@ -267,7 +267,7 @@ describe('IndexStaking', () => {
 
     it('success - amountSToken = 0, current stake > 0', async () => {
       // set and check firstAmountSToken
-      let firstAmountSToken = expandTo18Decimals(100);
+      const firstAmountSToken = expandTo18Decimals(100);
       expect(firstAmountSToken).to.be.gt(0);
 
       // first deposit - increase sToken allowance to indexStaking.address and run method deposit() - successfully
@@ -332,7 +332,7 @@ describe('IndexStaking', () => {
 
     it('success - amountSToken > 0, current stake > 0', async () => {
       // set and check firstAmountSToken
-      let firstAmountSToken = expandTo18Decimals(100);
+      const firstAmountSToken = expandTo18Decimals(100);
       expect(firstAmountSToken).to.be.gt(0);
 
       // first deposit - increase sToken allowance to indexStaking.address and run method deposit() - successfully
