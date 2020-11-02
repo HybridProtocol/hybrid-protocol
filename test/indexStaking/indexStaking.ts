@@ -190,11 +190,11 @@ describe('IndexStaking', () => {
 
       // get and check afterIndexStakingBalanceSToken
       const afterIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
-      expect(afterIndexStakingBalanceSToken).to.be.eq(beforeIndexStakingBalanceSToken);
+      expect(afterIndexStakingBalanceSToken).to.be.eq(beforeIndexStakingBalanceSToken.add(amountSToken));
 
       // get and check afterActiveStakeDeposits
       const afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
-      expect(afterActiveStakeDeposits).to.be.eq(beforeActiveStakeDeposits);
+      expect(afterActiveStakeDeposits).to.be.eq(beforeActiveStakeDeposits.add(amountSToken));
 
       // get and check afterStakedSnapshot
       const afterStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
@@ -202,12 +202,11 @@ describe('IndexStaking', () => {
 
       // get and check afterStake
       const afterStake = await indexStaking.stake(aliceWallet.address);
-      expect(afterStake).to.be.eq(beforeStake);
       expect(afterStake).to.be.eq(amountSToken);
 
       // get and check afterBalanceSToken
       const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
-      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken);
+      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.sub(amountSToken));
     });
 
     it('success - amountSToken > 0, current stake = 0', async () => {
@@ -259,7 +258,6 @@ describe('IndexStaking', () => {
 
       // get and check afterStake
       const afterStake = await indexStaking.stake(aliceWallet.address);
-      expect(afterStake).not.to.be.eq(beforeStake);
       expect(afterStake).to.be.eq(amountSToken);
 
       // get and check afterBalanceSToken
