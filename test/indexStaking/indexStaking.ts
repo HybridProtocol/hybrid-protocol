@@ -268,11 +268,136 @@ describe('IndexStaking', () => {
     });
 
     it('success - amountSToken = 0, current stake > 0', async () => {
-      // TODO
+      // set and check firstAmountSToken
+      let firstAmountSToken = expandTo18Decimals(100);
+      expect(firstAmountSToken).to.be.gt(0);
+
+      // first deposit - increase sToken allowance to indexStaking.address and run method deposit() - successfully
+      await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, firstAmountSToken);
+      await expect(indexStaking.connect(aliceWallet).deposit(firstAmountSToken)).not.to.be.reverted;
+
+      // set and check secondAmountSToken
+      const secondAmountSToken = expandTo18Decimals(0);
+      expect(secondAmountSToken).to.be.eq(0);
+
+      // get and check currentAllowanceSToken
+      const currentAllowanceSToken = await sToken.allowance(aliceWallet.address, indexStaking.address);
+      expect(currentAllowanceSToken).to.be.gte(secondAmountSToken);
+
+      // get and check beforeBalanceSToken
+      const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(beforeBalanceSToken).to.be.gte(secondAmountSToken);
+
+      // get and check beforeStake
+      const beforeStake = await indexStaking.stake(aliceWallet.address);
+      expect(beforeStake).to.be.eq(firstAmountSToken);
+
+      // get and check beforeStakedSnapshot
+      const beforeStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(beforeStakedSnapshot).to.be.eq(0);
+
+      // get and check beforeActiveStakeDeposits
+      const beforeActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(beforeActiveStakeDeposits).to.be.eq(firstAmountSToken);
+
+      // get and check beforeIndexStakingBalanceSToken
+      const beforeIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
+      expect(beforeIndexStakingBalanceSToken).to.be.eq(firstAmountSToken);
+
+      // run method deposit() - successfully
+      await expect(indexStaking.connect(aliceWallet).deposit(secondAmountSToken)).not.to.be.reverted;
+
+      // get and check afterIndexStakingBalanceSToken
+      const afterIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
+      expect(afterIndexStakingBalanceSToken).to.be.eq(
+        beforeIndexStakingBalanceSToken.sub(firstAmountSToken).add(secondAmountSToken),
+      );
+
+      // get and check afterActiveStakeDeposits
+      const afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(afterActiveStakeDeposits).to.be.eq(
+        beforeActiveStakeDeposits.sub(firstAmountSToken).add(secondAmountSToken),
+      );
+
+      // get and check afterStakedSnapshot
+      const afterStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(afterStakedSnapshot).to.be.gt(beforeStakedSnapshot);
+
+      // get and check afterStake
+      const afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(beforeStake.sub(firstAmountSToken).add(secondAmountSToken));
+
+      // get and check afterBalanceSToken
+      const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.add(firstAmountSToken));
     });
 
     it('success - amountSToken > 0, current stake > 0', async () => {
-      // TODO
+      // set and check firstAmountSToken
+      let firstAmountSToken = expandTo18Decimals(100);
+      expect(firstAmountSToken).to.be.gt(0);
+
+      // first deposit - increase sToken allowance to indexStaking.address and run method deposit() - successfully
+      await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, firstAmountSToken);
+      await expect(indexStaking.connect(aliceWallet).deposit(firstAmountSToken)).not.to.be.reverted;
+
+      // set and check secondAmountSToken
+      const secondAmountSToken = expandTo18Decimals(50);
+      expect(secondAmountSToken).to.be.gt(0);
+
+      // increase sToken allowance to indexStaking.address
+      await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, secondAmountSToken);
+
+      // get and check currentAllowanceSToken
+      const currentAllowanceSToken = await sToken.allowance(aliceWallet.address, indexStaking.address);
+      expect(currentAllowanceSToken).to.be.gte(secondAmountSToken);
+
+      // get and check beforeBalanceSToken
+      const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(beforeBalanceSToken).to.be.gte(secondAmountSToken);
+
+      // get and check beforeStake
+      const beforeStake = await indexStaking.stake(aliceWallet.address);
+      expect(beforeStake).to.be.eq(firstAmountSToken);
+
+      // get and check beforeStakedSnapshot
+      const beforeStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(beforeStakedSnapshot).to.be.eq(0);
+
+      // get and check beforeActiveStakeDeposits
+      const beforeActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(beforeActiveStakeDeposits).to.be.eq(firstAmountSToken);
+
+      // get and check beforeIndexStakingBalanceSToken
+      const beforeIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
+      expect(beforeIndexStakingBalanceSToken).to.be.eq(firstAmountSToken);
+
+      // run method deposit() - successfully
+      await expect(indexStaking.connect(aliceWallet).deposit(secondAmountSToken)).not.to.be.reverted;
+
+      // get and check afterIndexStakingBalanceSToken
+      const afterIndexStakingBalanceSToken = await sToken.balanceOf(indexStaking.address);
+      expect(afterIndexStakingBalanceSToken).to.be.eq(
+        beforeIndexStakingBalanceSToken.sub(firstAmountSToken).add(secondAmountSToken),
+      );
+
+      // get and check afterActiveStakeDeposits
+      const afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
+      expect(afterActiveStakeDeposits).to.be.eq(
+        beforeActiveStakeDeposits.sub(firstAmountSToken).add(secondAmountSToken),
+      );
+
+      // get and check afterStakedSnapshot
+      const afterStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(afterStakedSnapshot).to.be.gt(beforeStakedSnapshot);
+
+      // get and check afterStake
+      const afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(beforeStake.sub(firstAmountSToken).add(secondAmountSToken));
+
+      // get and check afterBalanceSToken
+      const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.add(firstAmountSToken).sub(secondAmountSToken));
     });
   });
 
