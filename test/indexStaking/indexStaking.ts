@@ -973,6 +973,140 @@ describe('IndexStaking', () => {
       expect(expectedActiveStakeDeposits).to.be.gt(0);
     });
   });
+
+  describe('stakedSnapshot', () => {
+    it('success', async () => {
+      // set and check amountSToken
+      const amountSToken = expandTo18Decimals(10);
+      expect(amountSToken).to.be.gt(0);
+
+      // get beforeStakedSnapshot
+      const beforeStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+      expect(beforeStakedSnapshot).to.be.eq(0);
+
+      // first deposit
+      {
+        // increase sToken allowance to indexStaking.address
+        await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+
+        // run method deposit() - successfully
+        await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
+
+        // get and check afterStaked
+        const afterStaked = await indexStaking.staked();
+        expect(afterStaked).to.be.eq(0);
+
+        // get and check afterStakedSnapshot
+        const afterStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+        expect(afterStakedSnapshot).to.be.eq(afterStaked);
+      }
+
+      // second deposit
+      {
+        // increase sToken allowance to indexStaking.address
+        await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+
+        // get and check expectedUserRewardParams
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, aliceWallet);
+
+        // run method deposit() - successfully
+        await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
+
+        // get and check afterStaked
+        const afterStaked = await indexStaking.staked();
+        expect(afterStaked).to.be.eq(expectedUserRewardParams.staked);
+
+        // get and check afterStakedSnapshot
+        const afterStakedSnapshot = await indexStaking.stakedSnapshot(aliceWallet.address);
+        expect(afterStakedSnapshot).to.be.eq(afterStaked);
+        expect(afterStakedSnapshot).to.be.gt(beforeStakedSnapshot);
+      }
+    });
+  });
+
+  describe('staked', () => {
+    it('success', async () => {
+      // set and check amountSToken
+      const amountSToken = expandTo18Decimals(10);
+      expect(amountSToken).to.be.gt(0);
+
+      // get beforeStaked
+      const beforeStaked = await indexStaking.staked();
+      expect(beforeStaked).to.be.eq(0);
+
+      // first deposit
+      {
+        // increase sToken allowance to indexStaking.address
+        await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+
+        // run method deposit() - successfully
+        await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
+
+        // get and check afterStaked
+        const afterStaked = await indexStaking.staked();
+        expect(afterStaked).to.be.eq(beforeStaked);
+      }
+
+      // second deposit
+      {
+        // increase sToken allowance to indexStaking.address
+        await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+
+        // get and check expectedUserRewardParams
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, aliceWallet);
+
+        // run method deposit() - successfully
+        await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
+
+        // get and check afterStaked
+        const afterStaked = await indexStaking.staked();
+        expect(afterStaked).to.be.eq(expectedUserRewardParams.staked);
+        expect(afterStaked).to.be.gt(beforeStaked);
+      }
+    });
+  });
+
+  describe('accumulatedReward', () => {
+    it('success', async () => {
+      // set and check amountSToken
+      const amountSToken = expandTo18Decimals(10);
+      expect(amountSToken).to.be.gt(0);
+
+      // get beforeAccumulatedReward
+      const beforeAccumulatedReward = await indexStaking.accumulatedReward();
+      expect(beforeAccumulatedReward).to.be.eq(0);
+
+      // first deposit
+      {
+        // increase sToken allowance to indexStaking.address
+        await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+
+        // run method deposit() - successfully
+        await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
+
+        // get and check afterAccumulatedReward
+        const afterAccumulatedReward = await indexStaking.accumulatedReward();
+        expect(afterAccumulatedReward).to.be.eq(beforeAccumulatedReward);
+      }
+
+      // second deposit
+      {
+        // increase sToken allowance to indexStaking.address
+        await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+
+        // get and check expectedUserRewardParams
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, aliceWallet);
+
+        // run method deposit() - successfully
+        await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
+
+        // get and check afterAccumulatedReward
+        const afterAccumulatedReward = await indexStaking.accumulatedReward();
+        expect(afterAccumulatedReward).to.be.eq(expectedUserRewardParams.accumulatedReward);
+        expect(afterAccumulatedReward).to.be.gt(beforeAccumulatedReward);
+      }
+    });
+  });
 });
 
 export interface CalculateCurrentReward {
