@@ -11,6 +11,8 @@ import "../libraries/SafeTransfer.sol";
 contract IndexGovernance is Maintenance {
     using SafeMath for uint256;
 
+    uint private minDuration; // blocks
+
     address public indexToken;
     address public stakingToken;
     uint lastProposalId;
@@ -35,8 +37,11 @@ contract IndexGovernance is Maintenance {
     event Voted(address voter, uint amount, bool decision);
     event ProposalClosed(uint id, bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator, string title, string description, string link);
 
-    constructor(address _indexToken) public {
+    constructor(address _indexToken, address _stakingToken, uint _minDuration) public {
+        require(_minDuration > 0, "IndexGovernance: MIN_DURATION_INVALID");
         indexToken = _indexToken;
+        stakingToken = _stakingToken;
+        minDuration = _minDuration;
     }
 
     function createProposal(
@@ -48,7 +53,7 @@ contract IndexGovernance is Maintenance {
         string memory _link
     ) public onlyMaintainers {
         require(_assets.length == _weights.length, "IndexGovernance: INVALID_LENGTH");
-        require(_duration <= 3 * 6500 && _duration > 6500, "IndexGovernance: DURATION_INVALID");
+        require(_duration <= 3 * minDuration && _duration > minDuration, "IndexGovernance: DURATION_INVALID");
         if (proposal.deadline != 0) {
             finalize();
         }
@@ -107,7 +112,7 @@ contract IndexGovernance is Maintenance {
 
     function claimFunds(uint _amount, uint _proposalId) public {
         if (proposal.id == _proposalId) {
-            require(proposal.deadline > block.number, "IndexGovernance: VOTING_IN_PROGRESS");
+            require(proposal.deadline <= block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         }
         votesOfUserByProposalId[_proposalId][msg.sender] = votesOfUserByProposalId[_proposalId][msg.sender].sub(_amount);
         SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount);

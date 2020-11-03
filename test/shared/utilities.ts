@@ -1,5 +1,5 @@
 import { Web3Provider } from 'ethers/providers';
-import { BigNumber, bigNumberify } from 'ethers/utils';
+import { Arrayish, BigNumber, bigNumberify } from 'ethers/utils';
 import { ethers } from '@nomiclabs/buidler';
 
 export function expandTo18Decimals(n: number): BigNumber {
@@ -94,7 +94,17 @@ export async function mineBlock(provider: Web3Provider, timestamp?: number): Pro
 }
 
 export async function mineBlocks(provider: Web3Provider, blockCount: number): Promise<void> {
-  for (let ind = 0; ind < blockCount; ind++) {
+  for (let i = 0; i < blockCount; i++) {
     await mineBlock(provider);
   }
+}
+
+export function convertStringToArrayish(data: string): Arrayish {
+  let dataBuffer = Buffer.from(data);
+  if (dataBuffer.byteLength < 8) {
+    const zeroBuffer = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    dataBuffer = Buffer.concat([dataBuffer, zeroBuffer], 8);
+  }
+  const hexNumber = dataBuffer.toString('hex');
+  return `0x${hexNumber}`;
 }
