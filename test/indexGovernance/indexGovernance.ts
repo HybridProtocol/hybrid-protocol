@@ -64,31 +64,49 @@ describe('IndexGovernance', () => {
       ],
       weights: [3500, 2000, 1000, 300, 700, 1700, 800],
       duration: indexGovernanceMinDuration * 2,
+      title: 'base title',
+      description: 'base description',
+      link: 'base link',
     },
     invalidAssetName: {
       assets: [assetArrayishValues.BTC, assetArrayishValues.ETH, assetArrayishValues.INVALID_ASSET],
       weights: [5500, 2500, 2000],
       duration: indexGovernanceMinDuration * 2,
+      title: 'invalidAssetName title',
+      description: 'invalidAssetName description',
+      link: 'invalidAssetName link',
     },
     invalidAssetsWeightsLength: {
       assets: [assetArrayishValues.BTC, assetArrayishValues.ETH],
       weights: [5500, 2500, 2000],
       duration: indexGovernanceMinDuration * 2,
+      title: 'invalidAssetsWeightsLength title',
+      description: 'invalidAssetsWeightsLength description',
+      link: 'invalidAssetsWeightsLength link',
     },
     shorterDuration: {
       assets: [assetArrayishValues.BTC, assetArrayishValues.ETH, assetArrayishValues.BCH],
       weights: [5500, 2500, 2000],
       duration: indexGovernanceMinDuration - 1,
+      title: 'shorterDuration title',
+      description: 'shorterDuration description',
+      link: 'shorterDuration link',
     },
     longerDuration: {
       assets: [assetArrayishValues.BTC, assetArrayishValues.ETH, assetArrayishValues.BCH],
       weights: [5500, 2500, 2000],
       duration: indexGovernanceMinDuration * 3 + 1,
+      title: 'longerDuration title',
+      description: 'longerDuration description',
+      link: 'longerDuration link',
     },
     invalidWeights: {
       assets: [assetArrayishValues.BTC, assetArrayishValues.ETH, assetArrayishValues.BCH],
       weights: [5500, 2500, 1000],
       duration: indexGovernanceMinDuration * 2,
+      title: 'invalidWeights title',
+      description: 'invalidWeights description',
+      link: 'invalidWeights link',
     },
   };
 
@@ -118,6 +136,9 @@ describe('IndexGovernance', () => {
     expect(indexGovernanceEmptyProposal.pros).to.be.eq(0);
     expect(indexGovernanceEmptyProposal.cons).to.be.eq(0);
     expect(indexGovernanceEmptyProposal.deadline).to.be.eq(0);
+    expect(indexGovernanceEmptyProposal.title).to.be.eq('');
+    expect(indexGovernanceEmptyProposal.description).to.be.eq('');
+    expect(indexGovernanceEmptyProposal.link).to.be.eq('');
   });
 
   describe('createProposal', () => {
@@ -132,7 +153,14 @@ describe('IndexGovernance', () => {
       await expect(
         indexGovernance
           .connect(otherWallet1)
-          .createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).to.be.reverted;
     });
 
@@ -148,7 +176,14 @@ describe('IndexGovernance', () => {
       try {
         await indexGovernance
           .connect(aliceWallet)
-          .createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration);
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          );
       } catch (e) {
         error = e;
       }
@@ -166,7 +201,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - reverted
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).to.be.revertedWith(ERRORS.INVALID_LENGTH);
     });
 
@@ -179,7 +223,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - reverted
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).to.be.revertedWith(ERRORS.DURATION_INVALID);
     });
 
@@ -192,7 +245,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - reverted
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).to.be.revertedWith(ERRORS.DURATION_INVALID);
     });
 
@@ -205,7 +267,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - reverted
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).to.be.revertedWith(ERRORS.TOTAL_WEIGHTS);
     });
 
@@ -223,18 +294,39 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // run method createProposal() - reverted
       await expect(
-        indexGovernance.connect(bobWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(bobWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            'new title',
+            'new description',
+            'new link',
+          ),
       ).to.be.revertedWith(ERRORS.VOTING_IN_PROGRESS);
 
       // get and check afterProposal
       const afterProposal = await indexGovernance.proposal();
       expect(afterProposal.id).to.be.eq(beforeProposal.id.add(1));
       expect(afterProposal.initiator).to.be.eq(aliceWallet.address);
+      expect(afterProposal.title).to.be.eq(voteAssets.title);
+      expect(afterProposal.description).to.be.eq(voteAssets.description);
+      expect(afterProposal.link).to.be.eq(voteAssets.link);
     });
 
     it('success - create one proposal', async () => {
@@ -250,13 +342,25 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // get and check afterProposal
       const afterProposal = await indexGovernance.proposal();
       expect(afterProposal.id).to.be.eq(beforeProposal.id.add(1));
       expect(afterProposal.initiator).to.be.eq(aliceWallet.address);
+      expect(afterProposal.title).to.be.eq(voteAssets.title);
+      expect(afterProposal.description).to.be.eq(voteAssets.description);
+      expect(afterProposal.link).to.be.eq(voteAssets.link);
     });
 
     it('success - create second proposal after completing the first', async () => {
@@ -273,7 +377,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // mine blocks
@@ -281,13 +394,25 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(bobWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(bobWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            'new title',
+            'new description',
+            'new link',
+          ),
       ).not.to.be.reverted;
 
       // get and check afterProposal
       const afterProposal = await indexGovernance.proposal();
       expect(afterProposal.id).to.be.eq(beforeProposal.id.add(2));
       expect(afterProposal.initiator).to.be.eq(bobWallet.address);
+      expect(afterProposal.title).to.be.eq('new title');
+      expect(afterProposal.description).to.be.eq('new description');
+      expect(afterProposal.link).to.be.eq('new link');
     });
   });
 
@@ -298,7 +423,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // mine blocks
@@ -320,7 +454,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // set and check amountStakingToken
@@ -347,7 +490,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // set and check amountStakingToken
@@ -377,7 +529,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // get and check beforeProposal
@@ -444,7 +605,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // get and check beforeProposal
@@ -485,7 +655,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // set prosStakingTokenAmount, consStakingTokenAmount, totalStakingTokenAmount, increase stakingToken allowance and do votes
@@ -530,7 +709,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // set prosStakingTokenAmount, consStakingTokenAmount, totalStakingTokenAmount, increase stakingToken allowance and do votes
@@ -584,13 +772,23 @@ describe('IndexGovernance', () => {
         await expect(
           indexGovernance
             .connect(aliceWallet)
-            .createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+            .createProposal(
+              voteAssets.assets,
+              voteAssets.weights,
+              voteAssets.duration,
+              `${voteAssets.title}-${i}`,
+              `${voteAssets.description}-${i}`,
+              `${voteAssets.link}-${i}`,
+            ),
         ).not.to.be.reverted;
 
         // get and check afterProposal
         const afterProposal = await indexGovernance.proposal();
         expect(afterProposal.id).to.be.eq(beforeProposal.id.add(i + 1));
         expect(afterProposal.initiator).to.be.eq(aliceWallet.address);
+        expect(afterProposal.title).to.be.eq(`${voteAssets.title}-${i}`);
+        expect(afterProposal.description).to.be.eq(`${voteAssets.description}-${i}`);
+        expect(afterProposal.link).to.be.eq(`${voteAssets.link}-${i}`);
 
         // mine blocks
         await mineBlocks(provider, voteAssets.duration);
@@ -612,7 +810,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // set stakingTokenAmount, increase stakingToken allowance and do votes
@@ -645,7 +852,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // set stakingTokenAmount, increase stakingToken allowance and do votes
@@ -699,7 +915,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // set stakingTokenAmount, increase stakingToken allowance and do votes
@@ -793,7 +1018,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(aliceWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(aliceWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // get and check beforeProposal
@@ -827,7 +1061,16 @@ describe('IndexGovernance', () => {
 
       // run method createProposal() - successfully
       await expect(
-        indexGovernance.connect(bobWallet).createProposal(voteAssets.assets, voteAssets.weights, voteAssets.duration),
+        indexGovernance
+          .connect(bobWallet)
+          .createProposal(
+            voteAssets.assets,
+            voteAssets.weights,
+            voteAssets.duration,
+            voteAssets.title,
+            voteAssets.description,
+            voteAssets.link,
+          ),
       ).not.to.be.reverted;
 
       // get and check beforeProposal
@@ -837,6 +1080,9 @@ describe('IndexGovernance', () => {
       expect(afterProposal.pros).to.be.eq(0);
       expect(afterProposal.cons).to.be.eq(0);
       expect(afterProposal.deadline).to.be.gt(0);
+      expect(afterProposal.title).to.be.eq(voteAssets.title);
+      expect(afterProposal.description).to.be.eq(voteAssets.description);
+      expect(afterProposal.link).to.be.eq(voteAssets.link);
     });
   });
 });
