@@ -609,6 +609,7 @@ describe('IndexStaking', () => {
             ? expectedStaked.add(expectedUserRewardParams.reward.div(expectedActiveStakeDeposits))
             : expectedStaked,
         );
+        expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw() - successfully
         await expect(indexStaking.connect(walletData.wallet)['withdraw()']()).not.to.be.reverted;
@@ -750,6 +751,7 @@ describe('IndexStaking', () => {
             ? expectedStaked.add(expectedUserRewardParams.reward.div(expectedActiveStakeDeposits))
             : expectedStaked,
         );
+        expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw() - successfully
         await expect(indexStaking.connect(walletData.wallet)['withdraw()']()).not.to.be.reverted;
@@ -896,6 +898,7 @@ describe('IndexStaking', () => {
             ? expectedStaked.add(expectedUserRewardParams.reward.div(expectedActiveStakeDeposits))
             : expectedStaked,
         );
+        expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw(withdrawAmountSToken) - successfully
         await expect(indexStaking.connect(walletData.wallet).withdraw(withdrawAmountSToken)).not.to.be.reverted;
@@ -1045,6 +1048,7 @@ describe('IndexStaking', () => {
             ? expectedStaked.add(expectedUserRewardParams.reward.div(expectedActiveStakeDeposits))
             : expectedStaked,
         );
+        expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw(withdrawAmountSToken) - successfully
         await expect(indexStaking.connect(walletData.wallet).withdraw(withdrawAmountSToken)).not.to.be.reverted;
