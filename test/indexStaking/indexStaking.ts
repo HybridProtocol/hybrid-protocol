@@ -1095,6 +1095,194 @@ describe('IndexStaking', () => {
       expect(afterActiveStakeDeposits).to.be.eq(expectedActiveStakeDeposits);
       expect(expectedActiveStakeDeposits).to.be.gt(0);
     });
+
+    it('success - check reward of deposit after past contract duration', async () => {
+      // set and check firstDepositAmountSToken and firstWallet
+      const firstWallet = aliceWallet;
+      const firstDepositAmountSToken = expandTo18Decimals(150);
+      expect(firstDepositAmountSToken).to.be.gt(0);
+
+      // set and check secondDepositAmountSToken and secondWallet
+      const secondWallet = bobWallet;
+      const secondDepositAmountSToken = expandTo18Decimals(300);
+      expect(secondDepositAmountSToken).to.be.gt(0);
+
+      // set and check thirdDepositAmountSToken and thirdWallet
+      const thirdWallet = eveWallet;
+      const thirdDepositAmountSToken = expandTo18Decimals(500);
+      expect(thirdDepositAmountSToken).to.be.gt(0);
+
+      // first deposit by firstWallet - before past contract duration
+      {
+        // get and check beforeBalanceSToken
+        const beforeBalanceSToken = await sToken.balanceOf(firstWallet.address);
+        expect(beforeBalanceSToken).to.be.gte(firstDepositAmountSToken);
+
+        // get and check beforeStake
+        const beforeStake = await indexStaking.stake(firstWallet.address);
+        expect(beforeStake).to.be.eq(0);
+
+        // increase sToken allowance to indexStaking.address and run method deposit() - successfully
+        await sToken.connect(firstWallet).increaseAllowance(indexStaking.address, firstDepositAmountSToken);
+        await expect(indexStaking.connect(firstWallet).deposit(firstDepositAmountSToken)).not.to.be.reverted;
+
+        // get and check afterStake
+        const afterStake = await indexStaking.stake(firstWallet.address);
+        expect(afterStake).to.be.eq(firstDepositAmountSToken);
+
+        // get and check afterBalanceSToken
+        const afterBalanceSToken = await sToken.balanceOf(firstWallet.address);
+        expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.sub(firstDepositAmountSToken));
+      }
+
+      // second deposit by secondWallet - before past contract duration
+      {
+        // get and check beforeBalanceSToken
+        const beforeBalanceSToken = await sToken.balanceOf(secondWallet.address);
+        expect(beforeBalanceSToken).to.be.gte(secondDepositAmountSToken);
+
+        // get and check beforeStake
+        const beforeStake = await indexStaking.stake(secondWallet.address);
+        expect(beforeStake).to.be.eq(0);
+
+        // increase sToken allowance to indexStaking.address and run method deposit() - successfully
+        await sToken.connect(secondWallet).increaseAllowance(indexStaking.address, secondDepositAmountSToken);
+        await expect(indexStaking.connect(secondWallet).deposit(secondDepositAmountSToken)).not.to.be.reverted;
+
+        // get and check afterStake
+        const afterStake = await indexStaking.stake(secondWallet.address);
+        expect(afterStake).to.be.eq(secondDepositAmountSToken);
+
+        // get and check afterBalanceSToken
+        const afterBalanceSToken = await sToken.balanceOf(secondWallet.address);
+        expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.sub(secondDepositAmountSToken));
+      }
+
+      // mine IndexStakingParams.duration - 5 blocks
+      await mineBlocks(provider, IndexStakingParams.duration);
+
+      // withdraw first deposit by firstWallet
+      {
+        // get beforeBalanceSToken
+        const beforeBalanceSToken = await sToken.balanceOf(firstWallet.address);
+
+        // get beforeBalanceRToken
+        const beforeBalanceRToken = await rToken.balanceOf(firstWallet.address);
+
+        // get and check beforeStake
+        const beforeStake = await indexStaking.stake(firstWallet.address);
+        expect(beforeStake).to.be.eq(firstDepositAmountSToken);
+
+        // get and check expectedUserRewardParams
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, firstWallet);
+        expect(expectedUserRewardParams.userReward).to.be.gt(0);
+
+        // run method withdraw(withdrawAmountSToken) - successfully
+        await expect(indexStaking.connect(firstWallet)['withdraw()']()).not.to.be.reverted;
+
+        // get and check afterStake
+        const afterStake = await indexStaking.stake(firstWallet.address);
+        expect(afterStake).to.be.eq(beforeStake.sub(firstDepositAmountSToken));
+
+        // get and check afterBalanceRToken
+        const afterBalanceRToken = await rToken.balanceOf(firstWallet.address);
+        expect(afterBalanceRToken).to.be.eq(beforeBalanceRToken.add(expectedUserRewardParams.userReward));
+
+        // get and check afterBalanceSToken
+        const afterBalanceSToken = await sToken.balanceOf(firstWallet.address);
+        expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.add(firstDepositAmountSToken));
+      }
+
+      // mine 5 blocks
+      await mineBlocks(provider, 5);
+
+      // third deposit by thirdWallet - after past contract duration
+      {
+        // get and check beforeBalanceSToken
+        const beforeBalanceSToken = await sToken.balanceOf(thirdWallet.address);
+        expect(beforeBalanceSToken).to.be.gte(thirdDepositAmountSToken);
+
+        // get and check beforeStake
+        const beforeStake = await indexStaking.stake(thirdWallet.address);
+        expect(beforeStake).to.be.eq(0);
+
+        // increase sToken allowance to indexStaking.address and run method deposit() - successfully
+        await sToken.connect(thirdWallet).increaseAllowance(indexStaking.address, thirdDepositAmountSToken);
+        await expect(indexStaking.connect(thirdWallet).deposit(thirdDepositAmountSToken)).not.to.be.reverted;
+
+        // get and check afterStake
+        const afterStake = await indexStaking.stake(thirdWallet.address);
+        expect(afterStake).to.be.eq(thirdDepositAmountSToken);
+
+        // get and check afterBalanceSToken
+        const afterBalanceSToken = await sToken.balanceOf(thirdWallet.address);
+        expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.sub(thirdDepositAmountSToken));
+      }
+
+      // withdraw second deposit by thirdWallet
+      {
+        // get beforeBalanceSToken
+        const beforeBalanceSToken = await sToken.balanceOf(thirdWallet.address);
+
+        // get beforeBalanceRToken
+        const beforeBalanceRToken = await rToken.balanceOf(thirdWallet.address);
+
+        // get and check beforeStake
+        const beforeStake = await indexStaking.stake(thirdWallet.address);
+        expect(beforeStake).to.be.eq(thirdDepositAmountSToken);
+
+        // get and check expectedUserRewardParams
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, thirdWallet);
+        expect(expectedUserRewardParams.userReward).to.be.eq(0);
+
+        // run method withdraw(withdrawAmountSToken) - successfully
+        await expect(indexStaking.connect(thirdWallet)['withdraw()']()).not.to.be.reverted;
+
+        // get and check afterStake
+        const afterStake = await indexStaking.stake(thirdWallet.address);
+        expect(afterStake).to.be.eq(beforeStake.sub(thirdDepositAmountSToken));
+
+        // get and check afterBalanceRToken
+        const afterBalanceRToken = await rToken.balanceOf(thirdWallet.address);
+        expect(afterBalanceRToken).to.be.eq(beforeBalanceRToken.add(expectedUserRewardParams.userReward));
+
+        // get and check afterBalanceSToken
+        const afterBalanceSToken = await sToken.balanceOf(thirdWallet.address);
+        expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.add(thirdDepositAmountSToken));
+      }
+
+      // withdraw second deposit by secondWallet
+      {
+        // get beforeBalanceSToken
+        const beforeBalanceSToken = await sToken.balanceOf(secondWallet.address);
+
+        // get beforeBalanceRToken
+        const beforeBalanceRToken = await rToken.balanceOf(secondWallet.address);
+
+        // get and check beforeStake
+        const beforeStake = await indexStaking.stake(secondWallet.address);
+        expect(beforeStake).to.be.eq(secondDepositAmountSToken);
+
+        // get and check expectedUserRewardParams
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, secondWallet);
+        expect(expectedUserRewardParams.userReward).to.be.gt(0);
+
+        // run method withdraw(withdrawAmountSToken) - successfully
+        await expect(indexStaking.connect(secondWallet)['withdraw()']()).not.to.be.reverted;
+
+        // get and check afterStake
+        const afterStake = await indexStaking.stake(secondWallet.address);
+        expect(afterStake).to.be.eq(beforeStake.sub(secondDepositAmountSToken));
+
+        // get and check afterBalanceRToken
+        const afterBalanceRToken = await rToken.balanceOf(secondWallet.address);
+        expect(afterBalanceRToken).to.be.eq(beforeBalanceRToken.add(expectedUserRewardParams.userReward));
+
+        // get and check afterBalanceSToken
+        const afterBalanceSToken = await sToken.balanceOf(secondWallet.address);
+        expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.add(secondDepositAmountSToken));
+      }
+    });
   });
 
   describe('stakedSnapshot', () => {
