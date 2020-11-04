@@ -35,6 +35,7 @@ contract IndexStaking {
     }
 
     function deposit(uint _amount) public {
+        require(startBlock.add(duration) > block.number, "IndexStaking: INVALID_DATE");
         if (stake[msg.sender] != 0) {
             withdraw();
         }
