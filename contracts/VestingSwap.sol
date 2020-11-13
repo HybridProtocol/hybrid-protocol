@@ -32,6 +32,9 @@ contract VestingSwap is Ownable, ReentrancyGuard {
     mapping(address => SwapInfo) public swap;
     mapping(address => uint) public swappedAmountOf;
 
+    event AlphaSwapInitialized();
+    event BetaSwapInitialized();
+    event GammaSwapInitialized();
     event Swap(address account, uint amount);
 
     modifier isStarted(address _presale) {
@@ -44,23 +47,27 @@ contract VestingSwap is Ownable, ReentrancyGuard {
         alphaPresale = _alphaPresale;
         betaPresale = _betaPresale;
         gammaPresale = _gammaPresale;
-
-        // _initVestingData();
     }
 
     function startAlphaSwap() external onlyOwner nonReentrant {
+        uint8[7] memory percentages = [10, 30, 30, 30, 0, 0, 0];
+        _initVestingData(alphaPresale, percentages);
         swap[alphaPresale].start = now;
-        swap[alphaPresale].sold = IPresale(alphaPresale).totalSold();
+        emit AlphaSwapInitialized();
     }
 
     function startBetaSwap() external onlyOwner nonReentrant {
+        uint8[7] memory percentages = [10, 15, 15, 15, 15, 15, 15];
+        _initVestingData(betaPresale, percentages);
         swap[betaPresale].start = now;
-        swap[betaPresale].sold = IPresale(betaPresale).totalSold();
+        emit BetaSwapInitialized();
     }
 
     function startGammaSwap() external onlyOwner nonReentrant {
+        uint8[7] memory percentages = [10, 15, 15, 15, 15, 15, 15];
+        _initVestingData(gammaPresale, percentages);
         swap[gammaPresale].start = now;
-        swap[gammaPresale].sold = IPresale(gammaPresale).totalSold();
+        emit GammaSwapInitialized();
     }
 
     function alphaSwap(uint _amount) external nonReentrant isStarted(alphaPresale) {
@@ -99,17 +106,12 @@ contract VestingSwap is Ownable, ReentrancyGuard {
         emit Swap(msg.sender, _amount);
     }
 
-    function _initVestingData() private {
-        uint8[7] memory alphaPercentages = [10, 30, 30, 30, 0, 0, 0];
-        uint8[7] memory betaPercentages  = [10, 15, 15, 15, 15, 15, 15];
-        uint8[7] memory gammaPercentages = [10, 15, 15, 15, 15, 15, 15];
-
-        for(uint i = 0; i < 7; i++) {
-            if (alphaPercentages[i] != 0) {
-                swap[alphaPresale].vesting[i] = swap[alphaPresale].sold * alphaPercentages[i] / 100;
+    function _initVestingData(address _presale, uint8[7] memory _percentages) private {
+        uint sold = IPresale(_presale).totalSold();
+        for(uint i = 0; i < _percentages.length; i++) {
+            if (_percentages[i] != 0) {
+                swap[_presale].vesting.push(sold * _percentages[i] / uint(100));
             }
-            swap[betaPresale].vesting[i] = swap[betaPresale].sold * betaPercentages[i] / 100;
-            swap[gammaPresale].vesting[i] = swap[gammaPresale].sold * gammaPercentages[i] / 100;
         }
     }
 }

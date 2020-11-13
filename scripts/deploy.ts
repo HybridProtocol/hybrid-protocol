@@ -5,13 +5,13 @@ import { Settings } from './settings';
 async function main() {
   const settings = new Settings();
 
-  const [deployer] = await hre.ethers.getSigners();
+  const [deployer] = await ethers.getSigners();
 
   console.log('Deploying contracts with the account:', deployer.address);
 
   console.log('Account balance:', (await deployer.getBalance()).toString());
 
-  const SaleHybridToken = await hre.ethers.getContractFactory('SaleHybridToken');
+  const SaleHybridToken = await ethers.getContractFactory('SaleHybridToken');
   const saleHybridToken = await SaleHybridToken.deploy();
   await saleHybridToken.deployed();
   console.log('Sale Hybrid Token deployed to:', saleHybridToken.address);
