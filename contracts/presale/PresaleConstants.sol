@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.6.6;
 
-library PresaleConstants {
+contract PresaleConstants {
     // State variables (must be constant in a library)
 
     // Hybrid "ONE" - all math is in the "realm" of 10 ** 18;

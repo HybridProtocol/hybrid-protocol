@@ -2,11 +2,12 @@
 pragma solidity >=0.6.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../libraries/PresaleConstants.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./presale/PresaleConstants.sol";
 import "../utils/Maintenance.sol";
 
 
-contract SaleHybridToken is ERC20, Ownable, Maintenance {
+contract SaleHybridToken is ERC20, Ownable, Maintenance, PresaleConstants, ReentrancyGuard {
 
     string internal constant NAME = "Sale Hybrid Token";
     string internal constant SYMBOL = "sHBT";
@@ -29,11 +30,11 @@ contract SaleHybridToken is ERC20, Ownable, Maintenance {
 
     modifier onlyAvailableAmount(address _contract, uint _amount) {
         if (_contract == alphaPresale) {
-            require(_amount <= PresaleConstants.ALPHA_PRESALE_LIMIT, "SaleHybridToken: ALPHA_PRESALE_LIMIT");
+            require(_amount <= ALPHA_PRESALE_LIMIT, "SaleHybridToken: ALPHA_PRESALE_LIMIT");
         } else if (_contract == betaPresale) {
-            require(_amount <= PresaleConstants.BETA_PRESALE_LIMIT, "SaleHybridToken: BETA_PRESALE_LIMIT");
+            require(_amount <= BETA_PRESALE_LIMIT, "SaleHybridToken: BETA_PRESALE_LIMIT");
         } else if (_contract == gammaPresale) {
-            require(_amount <= PresaleConstants.GAMMA_PRESALE_LIMIT, "SaleHybridToken: GAMMA_PRESALE_LIMIT");
+            require(_amount <= GAMMA_PRESALE_LIMIT, "SaleHybridToken: GAMMA_PRESALE_LIMIT");
         }
         _;
     }
@@ -44,20 +45,20 @@ contract SaleHybridToken is ERC20, Ownable, Maintenance {
         address _alphaPresale,
         address _betaPresale,
         address _gammaPresale
-    ) external onlyOwner {
+    ) external onlyOwner nonReentrant {
         alphaPresale = _alphaPresale;
         betaPresale = _betaPresale;
         gammaPresale = _gammaPresale;
 
-        _mint(_alphaPresale, PresaleConstants.ALPHA_PRESALE_LIMIT);
-        _mint(_betaPresale, PresaleConstants.BETA_PRESALE_LIMIT);
-        _mint(_gammaPresale, PresaleConstants.GAMMA_PRESALE_LIMIT);
+        _mint(_alphaPresale, ALPHA_PRESALE_LIMIT);
+        _mint(_betaPresale, BETA_PRESALE_LIMIT);
+        _mint(_gammaPresale, GAMMA_PRESALE_LIMIT);
     }
 
     function burnFor(
         address _presale,
         uint _amount
-    ) external onlyMaintainers onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
+    ) external onlyMaintainers nonReentrant onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
         require(!isBurnedFor[_presale], "SaleHybridToken: ONLY_ONCE_BURN");
         _burn(_presale, _amount);
         isBurnedFor[_presale] = true;

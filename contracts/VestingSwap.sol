@@ -3,13 +3,14 @@ pragma solidity >=0.6.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/ISaleHybridToken.sol";
 import "../interfaces/IPresale.sol";
 import "../libraries/SafeTransfer.sol";
-import "../libraries/PresaleConstants.sol";
 
 
-contract VestingSwap is Ownable {
+
+contract VestingSwap is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
 
     address private alphaPresale;
@@ -40,39 +41,37 @@ contract VestingSwap is Ownable {
 
     constructor(address _alphaPresale, address _betaPresale, address _gammaPresale, address _HBT) public {
         HBT = _HBT;
-
         alphaPresale = _alphaPresale;
         betaPresale = _betaPresale;
         gammaPresale = _gammaPresale;
 
-        swap[alphaPresale].sold = IPresale(alphaPresale).totalSold();
-        swap[betaPresale].sold = IPresale(betaPresale).totalSold();
-        swap[gammaPresale].sold = IPresale(gammaPresale).totalSold();
-
-        _initVestingData();
+        // _initVestingData();
     }
 
-    function startAlphaSwap() external onlyOwner {
+    function startAlphaSwap() external onlyOwner nonReentrant {
         swap[alphaPresale].start = now;
+        swap[alphaPresale].sold = IPresale(alphaPresale).totalSold();
     }
 
-    function startBetaSwap() external onlyOwner {
+    function startBetaSwap() external onlyOwner nonReentrant {
         swap[betaPresale].start = now;
+        swap[betaPresale].sold = IPresale(betaPresale).totalSold();
     }
 
-    function startGammaSwap() external onlyOwner {
+    function startGammaSwap() external onlyOwner nonReentrant {
         swap[gammaPresale].start = now;
+        swap[gammaPresale].sold = IPresale(gammaPresale).totalSold();
     }
 
-    function alphaSwap(uint _amount) external isStarted(alphaPresale) {
+    function alphaSwap(uint _amount) external nonReentrant isStarted(alphaPresale) {
         _swap(alphaPresale, _amount);
     }
 
-    function betaSwap(uint _amount) external isStarted(betaPresale) {
+    function betaSwap(uint _amount) external nonReentrant isStarted(betaPresale) {
         _swap(betaPresale, _amount);
     }
 
-    function gammaSwap(uint _amount) external isStarted(gammaPresale) {
+    function gammaSwap(uint _amount) external nonReentrant isStarted(gammaPresale) {
         _swap(gammaPresale, _amount);
     }
 
@@ -107,10 +106,10 @@ contract VestingSwap is Ownable {
 
         for(uint i = 0; i < 7; i++) {
             if (alphaPercentages[i] != 0) {
-                swap[alphaPresale].vesting[i] = swap[alphaPresale].sold.mul(alphaPercentages[i]).div(100);
+                swap[alphaPresale].vesting[i] = swap[alphaPresale].sold * alphaPercentages[i] / 100;
             }
-            swap[betaPresale].vesting[i] = swap[betaPresale].sold.mul(betaPercentages[i]).div(100);
-            swap[gammaPresale].vesting[i] = swap[gammaPresale].sold.mul(gammaPercentages[i]).div(100);
+            swap[betaPresale].vesting[i] = swap[betaPresale].sold * betaPercentages[i] / 100;
+            swap[gammaPresale].vesting[i] = swap[gammaPresale].sold * gammaPercentages[i] / 100;
         }
     }
 }

@@ -1,22 +1,18 @@
-import { Contract, Wallet } from 'ethers';
-import { Web3Provider } from 'ethers/providers';
+import { Contract, Signer } from 'ethers';
 import { SaleHybridToken } from '../../typechain/SaleHybridToken';
 import { AlphaPresale } from '../../typechain/AlphaPresale';
 import { BetaPresale } from '../../typechain/BetaPresale';
 import { GammaPresale } from '../../typechain/GammaPresale';
-import { PresaleConstants } from '../../typechain/PresaleConstants';
 import { SaleHybridTokenFactory } from '../../typechain/SaleHybridTokenFactory';
 import { AlphaPresaleFactory } from '../../typechain/AlphaPresaleFactory';
 import { BetaPresaleFactory } from '../../typechain/BetaPresaleFactory';
 import { GammaPresaleFactory } from '../../typechain/GammaPresaleFactory';
-import { PresaleConstantsFactory } from '../../typechain/PresaleConstantsFactory';
 import { HybridTokenFactory } from '../../typechain/HybridTokenFactory';
 import { expandTo18Decimals } from '../shared/utilities';
 
 export interface PresaleFixture {
   USDC: Contract;
   sHBT: SaleHybridToken;
-  presaleConstants: PresaleConstants;
   alphaPresale: AlphaPresale;
   betaPresale: BetaPresale;
   gammaPresale: GammaPresale;
@@ -33,16 +29,15 @@ const USDCDeployParams = {
   initialBalance: expandTo18Decimals(10000000),
 };
 
-export async function presaleFixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<PresaleFixture> {
+export async function presaleFixture([wallet]: Signer[]): Promise<PresaleFixture> {
   const USDC = await new HybridTokenFactory(wallet).deploy(
     USDCDeployParams.name,
     USDCDeployParams.symbol,
-    wallet.address,
+    await wallet.getAddress(),
     USDCDeployParams.initialBalance,
     overrides,
   );
   const sHBT = await new SaleHybridTokenFactory(wallet).deploy(overrides);
-  const presaleConstants = await new PresaleConstantsFactory(wallet).deploy(overrides);
   const alphaPresale = await new AlphaPresaleFactory(wallet).deploy(
     USDC.address,
     sHBT.address,
@@ -64,7 +59,6 @@ export async function presaleFixture(provider: Web3Provider, [wallet]: Wallet[])
   return {
     USDC,
     sHBT,
-    presaleConstants,
     alphaPresale,
     betaPresale,
     gammaPresale,

@@ -2,13 +2,14 @@
 pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IndexHybridToken.sol";
 import "../interfaces/IIndexHybridToken.sol";
 import "../interfaces/IHybridToken.sol";
 import "../utils/Maintenance.sol";
 import "../libraries/SafeTransfer.sol";
 
-contract IndexGovernance is Maintenance {
+contract IndexGovernance is Maintenance, ReentrancyGuard {
     using SafeMath for uint256;
 
     uint private minDuration; // blocks
@@ -78,7 +79,7 @@ contract IndexGovernance is Maintenance {
         emit ProposalCreated(proposal.id, _assets, _weights, _duration, msg.sender, _title, _description, _link);
     }
 
-    function vote(uint _amount, bool _decision) public {
+    function vote(uint _amount, bool _decision) public nonReentrant {
         require(proposal.deadline > block.number, "IndexGovernance: VOTING_NOT_IN_PROGRESS");
         SafeTransfer.transferFromERC20(address(stakingToken), msg.sender, address(this), _amount);
         if (_decision) {
@@ -90,7 +91,7 @@ contract IndexGovernance is Maintenance {
         emit Voted(msg.sender, _amount, _decision);
     }
 
-    function finalize() public {
+    function finalize() public nonReentrant {
         require(proposal.deadline < block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         if (proposal.pros > proposal.cons) {
             IIndexHybridToken(indexToken).updateComposition(proposal.assets, proposal.weights);
@@ -110,7 +111,7 @@ contract IndexGovernance is Maintenance {
         delete proposal;
     }
 
-    function claimFunds(uint _amount, uint _proposalId) public {
+    function claimFunds(uint _amount, uint _proposalId) public nonReentrant {
         if (proposal.id == _proposalId) {
             require(proposal.deadline <= block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         }

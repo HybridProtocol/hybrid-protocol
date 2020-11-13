@@ -2,10 +2,11 @@
 pragma solidity >=0.6.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../utils/Maintenance.sol";
 
 
-contract IndexHybridToken is ERC20, Maintenance {
+contract IndexHybridToken is ERC20, Maintenance, ReentrancyGuard {
 
     string private constant NAME = "Index Hybrid Token";
     string private constant SYMBOL = "xHBT";
@@ -30,7 +31,7 @@ contract IndexHybridToken is ERC20, Maintenance {
         maxMintedSupply = _maxMintedSupply;
     }
 
-    function updateComposition(bytes8[] calldata _assets, uint16[] calldata _weights) external onlyMaintainers {
+    function updateComposition(bytes8[] calldata _assets, uint16[] calldata _weights) external onlyMaintainers nonReentrant {
         require(_assets.length == _weights.length, "IndexHybridToken: INVALID_LENGTH");
         uint totalWeights;
         for (uint i = 0; i < _weights.length; i++) {
@@ -44,14 +45,14 @@ contract IndexHybridToken is ERC20, Maintenance {
         emit CompositionUpdated(_assets, _weights);
     }
 
-    function mintAmount(address[] calldata _accounts, uint256 _amount) external onlyMaintainers {
+    function mintAmount(address[] calldata _accounts, uint256 _amount) external onlyMaintainers nonReentrant {
         for (uint i = 0; i < _accounts.length; ++i) {
             _mint(_accounts[i], _amount);
         }
         require(totalSupply() <= maxMintedSupply, "IndexHybridToken: MAX_MINTED_SUPPLY_LIMIT");
     }
 
-    function mintAmounts(address[] calldata _accounts, uint256[] calldata _amounts) external onlyMaintainers {
+    function mintAmounts(address[] calldata _accounts, uint256[] calldata _amounts) external onlyMaintainers nonReentrant {
         require(_accounts.length == _amounts.length, "IndexHybridToken: INVALID_LENGTH");
         for (uint i = 0; i < _accounts.length; ++i) {
             _mint(_accounts[i], _amounts[i]);
