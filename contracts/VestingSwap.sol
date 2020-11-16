@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
+
 pragma solidity >=0.6.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -32,9 +33,9 @@ contract VestingSwap is Ownable, ReentrancyGuard {
     mapping(address => SwapInfo) public swap;
     mapping(address => uint) public swappedAmountOf;
 
-    event AlphaSwapInitialized();
-    event BetaSwapInitialized();
-    event GammaSwapInitialized();
+    event AlphaSwapInitialized(uint, uint8[7]);
+    event BetaSwapInitialized(uint, uint8[7]);
+    event GammaSwapInitialized(uint, uint8[7]);
     event Swap(address account, uint amount);
 
     modifier isStarted(address _presale) {
@@ -53,21 +54,21 @@ contract VestingSwap is Ownable, ReentrancyGuard {
         uint8[7] memory percentages = [10, 30, 30, 30, 0, 0, 0];
         _initVestingData(alphaPresale, percentages);
         swap[alphaPresale].start = now;
-        emit AlphaSwapInitialized();
+        emit AlphaSwapInitialized(now, percentages);
     }
 
     function startBetaSwap() external onlyOwner nonReentrant {
         uint8[7] memory percentages = [10, 15, 15, 15, 15, 15, 15];
         _initVestingData(betaPresale, percentages);
         swap[betaPresale].start = now;
-        emit BetaSwapInitialized();
+        emit BetaSwapInitialized(now, percentages);
     }
 
     function startGammaSwap() external onlyOwner nonReentrant {
         uint8[7] memory percentages = [10, 15, 15, 15, 15, 15, 15];
         _initVestingData(gammaPresale, percentages);
         swap[gammaPresale].start = now;
-        emit GammaSwapInitialized();
+        emit GammaSwapInitialized(now, percentages);
     }
 
     function alphaSwap(uint _amount) external nonReentrant isStarted(alphaPresale) {

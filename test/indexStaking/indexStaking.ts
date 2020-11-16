@@ -117,40 +117,40 @@ describe('IndexStaking', () => {
       expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken);
     });
 
-    // it('fail - invalid transferFromERC20 - enough allowance, not enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
-    //   const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
-    //   // set and check amountSToken
-    //   const amountSToken = expandTo18Decimals(1500);
-    //   expect(amountSToken).to.be.gt(0);
+    it('fail - invalid transferFromERC20 - enough allowance, not enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
+      // set and check amountSToken
+      const amountSToken = expandTo18Decimals(1500);
+      expect(amountSToken).to.be.gt(0);
 
-    //   // increase sToken allowance to indexStaking.address
-    //   await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
+      // increase sToken allowance to indexStaking.address
+      await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
 
-    //   // get and check currentAllowanceSToken
-    //   const currentAllowanceSToken = await sToken.allowance(aliceWallet.address, indexStaking.address);
-    //   expect(currentAllowanceSToken).to.be.gte(amountSToken);
+      // get and check currentAllowanceSToken
+      const currentAllowanceSToken = await sToken.allowance(aliceWallet.address, indexStaking.address);
+      expect(currentAllowanceSToken).to.be.gte(amountSToken);
 
-    //   // get and check beforeBalanceSToken
-    //   const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
-    //   expect(beforeBalanceSToken).to.be.lt(amountSToken);
+      // get and check beforeBalanceSToken
+      const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(beforeBalanceSToken).to.be.lt(amountSToken);
 
-    //   // get and check beforeStake
-    //   const beforeStake = await indexStaking.stake(aliceWallet.address);
-    //   expect(beforeStake).to.be.eq(0);
+      // get and check beforeStake
+      const beforeStake = await indexStaking.stake(aliceWallet.address);
+      expect(beforeStake).to.be.eq(0);
 
-    //   // run method deposit() - reverted
-    //   await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).to.be.revertedWith(
-    //     ERRORS.SAFE_TRANSFER_TRANSFER_FROM,
-    //   );
+      // run method deposit() - reverted
+      await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).to.be.revertedWith(
+        ERRORS.SAFE_TRANSFER_TRANSFER_FROM,
+      );
 
-    //   // get and check afterStake
-    //   const afterStake = await indexStaking.stake(aliceWallet.address);
-    //   expect(afterStake).to.be.eq(beforeStake);
+      // get and check afterStake
+      const afterStake = await indexStaking.stake(aliceWallet.address);
+      expect(afterStake).to.be.eq(beforeStake);
 
-    //   // get and check afterBalanceSToken
-    //   const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
-    //   expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken);
-    // });
+      // get and check afterBalanceSToken
+      const afterBalanceSToken = await sToken.balanceOf(aliceWallet.address);
+      expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken);
+    });
 
     it('fail - deposit after past contract duration (IndexStaking: IndexStaking: INVALID_DATE)', async () => {
       const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();

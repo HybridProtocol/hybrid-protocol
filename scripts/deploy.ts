@@ -45,18 +45,20 @@ async function main() {
   await saleHybridToken.mintPresale(alphaPresale.address, betaPresale.address, gammaPresale.address);
   console.log('sHBT token were minted to presale contracts');
 
+  const totalSupplyHBT = ethers.utils.parseEther(settings.hbtTotalSupply.toString());
+
   const HybridToken = await hre.ethers.getContractFactory('HybridToken');
   const hybridToken = await HybridToken.deploy(
     'Hybrid Token',
     'HBT',
     await deployer.getAddress(),
-    '1000000000000000000000',
+    settings.hbtTotalSupply,
   );
   await hybridToken.deployed();
   console.log('Hybrid Token deployed to:', hybridToken.address);
 
   const IndexHybridToken = await hre.ethers.getContractFactory('IndexHybridToken');
-  const indexHybridToken = await IndexHybridToken.deploy('1000000000000000000000', '5000000000000000000000');
+  const indexHybridToken = await IndexHybridToken.deploy(settings.XHBTInitSupply, settings.maxXHBTSupply);
   await indexHybridToken.deployed();
   console.log('Index Hybrid Token deployed to:', indexHybridToken.address);
 
@@ -70,14 +72,13 @@ async function main() {
   await vestingSwap.deployed();
   console.log('Vesting Swap deployed to:', vestingSwap.address);
 
-  const totalSupply = ethers.utils.parseEther(settings.hbtTotalSupply.toString());
-  const rewardSupply = BigNumber.from(settings.hbtStakingRewardSupplyPercentages).mul(totalSupply).div(100);
+  const rewardSupply = BigNumber.from(settings.hbtStakingRewardSupplyPercentages).mul(totalSupplyHBT).div(100);
   const IndexStaking = await hre.ethers.getContractFactory('IndexStaking');
   const indexStaking = await IndexStaking.deploy(
     indexHybridToken.address,
     hybridToken.address,
     settings.stakingDuration,
-    totalSupply,
+    totalSupplyHBT,
     rewardSupply,
   );
   await indexStaking.deployed();
@@ -88,6 +89,7 @@ async function main() {
   await indexGovernance.deployed();
   console.log('Index Governance deployed to:', indexGovernance.address);
 
+  console.log('\nHBT Total Supply', ethers.utils.formatUnits(settings.hbtTotalSupply, 'wei'));
   console.log('Account balance:', (await deployer.getBalance()).toString());
 }
 
