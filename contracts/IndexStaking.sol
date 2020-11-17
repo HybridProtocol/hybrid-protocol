@@ -1,10 +1,12 @@
-//SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: Apache-2.0
+
 pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../libraries/SafeTransfer.sol";
 
-contract IndexStaking {
+contract IndexStaking is ReentrancyGuard {
     using SafeMath for uint256;
 
     uint public duration; // blocks
@@ -46,7 +48,7 @@ contract IndexStaking {
         emit Deposited(msg.sender, _amount);
     }
 
-    function withdraw(uint _amount) external {
+    function withdraw(uint _amount) external nonReentrant {
         (uint deposited,) = withdraw();
         deposit(deposited.sub(_amount));
     }

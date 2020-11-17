@@ -1,21 +1,20 @@
-import { Web3Provider } from 'ethers/providers';
-import { Arrayish, BigNumber, bigNumberify } from 'ethers/utils';
-import { ethers } from '@nomiclabs/buidler';
+import { ethers } from 'hardhat';
+import { BigNumber, BytesLike } from 'ethers';
 
 export function expandTo18Decimals(n: number): BigNumber {
-  return bigNumberify(n).mul(bigNumberify(10).pow(18));
+  return BigNumber.from(n).mul(BigNumber.from(10).pow(18));
 }
 
 export function expandFrom18Decimals(n: BigNumber): number {
-  return bigNumberify(n).div(bigNumberify(10).pow(18)).toNumber();
+  return BigNumber.from(n).div(BigNumber.from(10).pow(18)).toNumber();
 }
 
 export function expandBigToDecimals(n: BigNumber, d: number): BigNumber {
-  return n.mul(bigNumberify(10).pow(d));
+  return n.mul(BigNumber.from(10).pow(d));
 }
 
 export function expandToDecimals(n: BigNumber, d: number): BigNumber {
-  return bigNumberify(n).mul(bigNumberify(10).pow(d));
+  return BigNumber.from(n).mul(BigNumber.from(10).pow(d));
 }
 
 export function assert<T>(property: string, value: T | undefined): T {
@@ -78,28 +77,17 @@ export function parseBigNumbers(property: string, value: string | undefined, dec
   return array.map((v, i) => parseBigNumber(`${property}[${i}]`, v, decimals));
 }
 
-export async function mineBlock(provider: Web3Provider, timestamp?: number): Promise<void> {
-  await new Promise(async (resolve, reject) => {
-    (provider._web3Provider.sendAsync as any)(
-      { jsonrpc: '2.0', method: 'evm_mine', params: [timestamp] },
-      (error: any, result: any): void => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      },
-    );
-  });
+export async function mineBlock(provider: any, timestamp?: number): Promise<void> {
+  await provider.send('evm_mine', []);
 }
 
-export async function mineBlocks(provider: Web3Provider, blockCount: number): Promise<void> {
+export async function mineBlocks(provider: any, blockCount: number): Promise<void> {
   for (let i = 0; i < blockCount; i++) {
     await mineBlock(provider);
   }
 }
 
-export function convertStringToArrayish(data: string): Arrayish {
+export function convertStringToArrayish(data: string): BytesLike {
   let dataBuffer = Buffer.from(data);
   if (dataBuffer.byteLength < 8) {
     const zeroBuffer = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);

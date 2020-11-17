@@ -1,5 +1,4 @@
-import { Wallet } from 'ethers';
-import { Web3Provider } from 'ethers/providers';
+import { Signer } from 'ethers';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexStaking } from '../../typechain/IndexStaking';
 import { HybridTokenFactory } from '../../typechain/HybridTokenFactory';
@@ -32,18 +31,18 @@ const RewardTokenDeployParams = {
   initialBalance: IndexStakingParams.rewardSupply,
 };
 
-export async function indexStakingFixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<IndexStakingFixture> {
+export async function indexStakingFixture([wallet]: Signer[]): Promise<IndexStakingFixture> {
   const stakingToken = await new HybridTokenFactory(wallet).deploy(
     StakingTokenDeployParams.name,
     StakingTokenDeployParams.symbol,
-    wallet.address,
+    await wallet.getAddress(),
     StakingTokenDeployParams.initialBalance,
     overrides,
   );
   const rewardToken = await new HybridTokenFactory(wallet).deploy(
     RewardTokenDeployParams.name,
     RewardTokenDeployParams.symbol,
-    wallet.address,
+    await wallet.getAddress(),
     RewardTokenDeployParams.initialBalance,
     overrides,
   );

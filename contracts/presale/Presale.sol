@@ -1,14 +1,16 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
+
 pragma solidity >=0.6.6;
 
 import "../../interfaces/ISaleHybridToken.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../../libraries/PresaleConstants.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./PresaleConstants.sol";
 import "../../libraries/SafeTransfer.sol";
 
 
-contract Presale is Ownable {
+contract Presale is Ownable, PresaleConstants, ReentrancyGuard {
     using SafeMath for uint256;
 
     IERC20 USDC;
@@ -33,28 +35,28 @@ contract Presale is Ownable {
         duration = _duration;
     }
 
-    function start() external onlyOwner {
+    function start() external nonReentrant onlyOwner {
         require(startBlock == 0, "Presale: ALREADY_STARTED");
         startBlock = block.number;
     }
 
-    function burn() external onlyOwner {
+    function burn() external nonReentrant onlyOwner {
         require(block.number > startBlock + duration, "Presale: INVALID_DATE");
         uint unreleasedAmount = SHBT.balanceOf(address(this));
         SHBT.burnFor(address(this), unreleasedAmount);
     }
 
-    function sendUSDC(address _to, uint _amount) external onlyOwner {
+    function sendUSDC(address _to, uint _amount) nonReentrant external onlyOwner {
         USDC.transfer(_to, _amount);
     }
 
-    function buy(uint _amountUSDC) external {
+    function buy(uint _amountUSDC) external nonReentrant {
         require(block.number <= startBlock + duration, "Presale: INVALID_DATE");
         uint availableAmountSHBT = purchasedLimit.sub(purchasedAmountOf[msg.sender]);
-        uint amountSHBT = _amountUSDC.mul(PresaleConstants.ONE_HBT_IN_WEI).div(rate);
+        uint amountSHBT = _amountUSDC.mul(ONE_HBT_IN_WEI).div(rate);
         if (amountSHBT > availableAmountSHBT) {
             amountSHBT = availableAmountSHBT;
-            _amountUSDC = amountSHBT.mul(rate).div(PresaleConstants.ONE_HBT_IN_WEI);
+            _amountUSDC = amountSHBT.mul(rate).div(ONE_HBT_IN_WEI);
         }
         require(_amountUSDC > 0, "Presale: ZERO_AMOUNT_USDC");
         require(amountSHBT > 0, "Presale: ZERO_AMOUNT_SHBT");

@@ -1,14 +1,11 @@
-import chai, { expect } from 'chai';
-import { createFixtureLoader, MockProvider, solidity } from 'ethereum-waffle';
-import { Web3Provider } from 'ethers/providers';
-import { BigNumber } from 'ethers/utils';
-import { Wallet } from 'ethers';
+import hre from 'hardhat';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { Signer } from 'ethers';
 import { expandTo18Decimals, mineBlocks } from '../shared/utilities';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexStaking } from '../../typechain/IndexStaking';
 import { indexStakingFixture, IndexStakingParams } from './indexStakingFixtures';
-
-chai.use(solidity);
 
 const ERRORS = {
   SAFE_TRANSFER_TRANSFER_FROM: 'SafeTransfer: TRANSFER_FROM',
@@ -18,24 +15,20 @@ const ERRORS = {
 };
 
 describe('IndexStaking', () => {
-  const provider = new MockProvider({
-    hardfork: 'istanbul',
-    mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
-    gasLimit: 9999999,
-  });
-  const [ownerWallet, aliceWallet, bobWallet, eveWallet] = provider.getWallets();
-  const loadFixture = createFixtureLoader(provider, [ownerWallet]);
   let sToken: HybridToken;
   let rToken: HybridToken;
   let indexStaking: IndexStaking;
   let testStartBlockNumber: number;
 
   beforeEach(async () => {
+    const signers = await hre.ethers.getSigners();
+    const [ownerWallet, aliceWallet, bobWallet, eveWallet] = signers;
+
     // get testStartBlockNumber
-    testStartBlockNumber = await provider.getBlockNumber();
+    testStartBlockNumber = await hre.ethers.provider.getBlockNumber();
 
     // load fixture
-    const fixture = await loadFixture(indexStakingFixture);
+    const fixture = await indexStakingFixture(signers);
 
     // update contract variables
     sToken = fixture.stakingToken;
@@ -93,6 +86,7 @@ describe('IndexStaking', () => {
 
   describe('deposit', () => {
     it('fail - invalid transferFromERC20 - not enough allowance, enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(150);
       expect(amountSToken).to.be.gt(0);
@@ -124,6 +118,7 @@ describe('IndexStaking', () => {
     });
 
     it('fail - invalid transferFromERC20 - enough allowance, not enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(1500);
       expect(amountSToken).to.be.gt(0);
@@ -158,6 +153,7 @@ describe('IndexStaking', () => {
     });
 
     it('fail - deposit after past contract duration (IndexStaking: IndexStaking: INVALID_DATE)', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(150);
       expect(amountSToken).to.be.gt(0);
@@ -178,7 +174,7 @@ describe('IndexStaking', () => {
       expect(beforeStake).to.be.eq(0);
 
       // mine IndexStakingParams.duration blocks
-      await mineBlocks(provider, IndexStakingParams.duration);
+      await mineBlocks(hre.ethers.provider, IndexStakingParams.duration);
 
       // run method deposit() - reverted
       await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).to.be.revertedWith(
@@ -195,6 +191,7 @@ describe('IndexStaking', () => {
     });
 
     it('success - amountSToken = 0, current stake = 0', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(0);
       expect(amountSToken).to.be.eq(0);
@@ -248,6 +245,7 @@ describe('IndexStaking', () => {
     });
 
     it('success - amountSToken > 0, current stake = 0', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(150);
       expect(amountSToken).to.be.gt(0);
@@ -304,6 +302,7 @@ describe('IndexStaking', () => {
     });
 
     it('success - amountSToken = 0, current stake > 0', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check firstAmountSToken
       const firstAmountSToken = expandTo18Decimals(100);
       expect(firstAmountSToken).to.be.gt(0);
@@ -369,6 +368,7 @@ describe('IndexStaking', () => {
     });
 
     it('success - amountSToken > 0, current stake > 0', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check firstAmountSToken
       const firstAmountSToken = expandTo18Decimals(100);
       expect(firstAmountSToken).to.be.gt(0);
@@ -439,6 +439,7 @@ describe('IndexStaking', () => {
 
   describe('stake', () => {
     it('success', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get and check beforeStake
       const beforeStake = await indexStaking.stake(aliceWallet.address);
       expect(beforeStake).to.be.eq(0);
@@ -458,7 +459,8 @@ describe('IndexStaking', () => {
       const remainderStake = afterStake.sub(withdrawAmountSToken);
       expect(remainderStake).to.be.gt(0);
       await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, remainderStake);
-      await expect(indexStaking.connect(aliceWallet).withdraw(withdrawAmountSToken)).not.to.be.reverted;
+
+      await expect(indexStaking.connect(aliceWallet)['withdraw(uint256)'](withdrawAmountSToken)).not.to.be.reverted;
 
       // get and check afterStake
       afterStake = await indexStaking.stake(aliceWallet.address);
@@ -475,6 +477,7 @@ describe('IndexStaking', () => {
 
   describe('activeStakeDeposits', () => {
     it('success', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // get and check beforeActiveStakeDeposits
       const beforeActiveStakeDeposits = await indexStaking.activeStakeDeposits();
       expect(beforeActiveStakeDeposits).to.be.eq(0);
@@ -487,7 +490,7 @@ describe('IndexStaking', () => {
       ];
 
       // set expectedActiveStakeDeposits
-      let expectedActiveStakeDeposits = new BigNumber(0);
+      let expectedActiveStakeDeposits = BigNumber.from(0);
 
       // deposit staking token for walletDataList, check activeStakeDeposits
       for (const walletData of walletDataList) {
@@ -540,6 +543,7 @@ describe('IndexStaking', () => {
 
   describe('withdraw', () => {
     it('fail - withdraw part, amount > stake balance', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(100);
       expect(amountSToken).to.be.gt(0);
@@ -549,12 +553,13 @@ describe('IndexStaking', () => {
       expect(beforeStake).to.be.lt(amountSToken);
 
       // run method withdraw() - reverted
-      await expect(indexStaking.connect(aliceWallet).withdraw(amountSToken)).to.be.revertedWith(
+      await expect(indexStaking.connect(aliceWallet)['withdraw(uint256)'](amountSToken)).to.be.revertedWith(
         ERRORS.SAFE_MATH_OVERFLOW,
       );
     });
 
     it('success - withdraw all, before past contract duration', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // set walletDataList
       const walletDataList = [
         { wallet: aliceWallet, amountSToken: expandTo18Decimals(100) },
@@ -588,7 +593,7 @@ describe('IndexStaking', () => {
       // get expectedActiveStakeDeposits
       let expectedActiveStakeDeposits = walletDataList.reduce(
         (totalAmount: BigNumber, item: any) => totalAmount.add(item.amountSToken),
-        new BigNumber(0),
+        BigNumber.from(0),
       );
 
       // get and check afterActiveStakeDeposits
@@ -604,7 +609,7 @@ describe('IndexStaking', () => {
       expect(expectedAccumulatedReward).to.be.eq(0);
 
       // mine some blocks
-      await mineBlocks(provider, 5);
+      await mineBlocks(hre.ethers.provider, 5);
 
       // withdraw staking token for walletDataList
       for (const walletData of walletDataList) {
@@ -623,7 +628,7 @@ describe('IndexStaking', () => {
 
         // get and check expectedUserRewardParams
         const expectedUserRewardParams = await calculateExpectedUserRewardParams(
-          provider,
+          hre.ethers.provider,
           indexStaking,
           walletData.wallet,
         );
@@ -697,6 +702,7 @@ describe('IndexStaking', () => {
     });
 
     it('success - withdraw all, after past contract duration', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // set walletDataList
       const walletDataList = [
         { wallet: aliceWallet, amountSToken: expandTo18Decimals(100) },
@@ -730,7 +736,7 @@ describe('IndexStaking', () => {
       // get expectedActiveStakeDeposits
       let expectedActiveStakeDeposits = walletDataList.reduce(
         (totalAmount: BigNumber, item: any) => totalAmount.add(item.amountSToken),
-        new BigNumber(0),
+        BigNumber.from(0),
       );
 
       // get and check afterActiveStakeDeposits
@@ -746,7 +752,7 @@ describe('IndexStaking', () => {
       expect(expectedAccumulatedReward).to.be.eq(0);
 
       // mine some blocks
-      await mineBlocks(provider, IndexStakingParams.duration);
+      await mineBlocks(hre.ethers.provider, IndexStakingParams.duration);
 
       // withdraw staking token for walletDataList
       for (const walletData of walletDataList) {
@@ -765,7 +771,7 @@ describe('IndexStaking', () => {
 
         // get and check expectedUserRewardParams
         const expectedUserRewardParams = await calculateExpectedUserRewardParams(
-          provider,
+          hre.ethers.provider,
           indexStaking,
           walletData.wallet,
         );
@@ -839,6 +845,7 @@ describe('IndexStaking', () => {
     });
 
     it('success - withdraw part, amount > 0', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // set walletDataList
       const walletDataList = [
         { wallet: aliceWallet, amountSToken: expandTo18Decimals(100) },
@@ -872,7 +879,7 @@ describe('IndexStaking', () => {
       // get expectedActiveStakeDeposits
       let expectedActiveStakeDeposits = walletDataList.reduce(
         (totalAmount: BigNumber, item: any) => totalAmount.add(item.amountSToken),
-        new BigNumber(0),
+        BigNumber.from(0),
       );
 
       // get and check afterActiveStakeDeposits
@@ -888,7 +895,7 @@ describe('IndexStaking', () => {
       expect(expectedAccumulatedReward).to.be.eq(0);
 
       // mine some blocks
-      await mineBlocks(provider, 5);
+      await mineBlocks(hre.ethers.provider, 5);
 
       // withdraw staking token for walletDataList
       for (const walletData of walletDataList) {
@@ -912,7 +919,7 @@ describe('IndexStaking', () => {
 
         // get and check expectedUserRewardParams
         const expectedUserRewardParams = await calculateExpectedUserRewardParams(
-          provider,
+          hre.ethers.provider,
           indexStaking,
           walletData.wallet,
         );
@@ -939,7 +946,8 @@ describe('IndexStaking', () => {
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw(withdrawAmountSToken) - successfully
-        await expect(indexStaking.connect(walletData.wallet).withdraw(withdrawAmountSToken)).not.to.be.reverted;
+        await expect(indexStaking.connect(walletData.wallet)['withdraw(uint256)'](withdrawAmountSToken)).not.to.be
+          .reverted;
 
         // get and check afterStake
         const afterStake = await indexStaking.stake(walletData.wallet.address);
@@ -989,6 +997,7 @@ describe('IndexStaking', () => {
     });
 
     it('success - withdraw part, amount = 0', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // set walletDataList
       const walletDataList = [
         { wallet: aliceWallet, amountSToken: expandTo18Decimals(100) },
@@ -1022,7 +1031,7 @@ describe('IndexStaking', () => {
       // get expectedActiveStakeDeposits
       let expectedActiveStakeDeposits = walletDataList.reduce(
         (totalAmount: BigNumber, item: any) => totalAmount.add(item.amountSToken),
-        new BigNumber(0),
+        BigNumber.from(0),
       );
 
       // get and check afterActiveStakeDeposits
@@ -1038,7 +1047,7 @@ describe('IndexStaking', () => {
       expect(expectedAccumulatedReward).to.be.eq(0);
 
       // mine some blocks
-      await mineBlocks(provider, 5);
+      await mineBlocks(hre.ethers.provider, 5);
 
       // withdraw staking token for walletDataList
       for (const walletData of walletDataList) {
@@ -1062,7 +1071,7 @@ describe('IndexStaking', () => {
 
         // get and check expectedUserRewardParams
         const expectedUserRewardParams = await calculateExpectedUserRewardParams(
-          provider,
+          hre.ethers.provider,
           indexStaking,
           walletData.wallet,
         );
@@ -1089,7 +1098,8 @@ describe('IndexStaking', () => {
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw(withdrawAmountSToken) - successfully
-        await expect(indexStaking.connect(walletData.wallet).withdraw(withdrawAmountSToken)).not.to.be.reverted;
+        await expect(indexStaking.connect(walletData.wallet)['withdraw(uint256)'](withdrawAmountSToken)).not.to.be
+          .reverted;
 
         // get and check afterStake
         const afterStake = await indexStaking.stake(walletData.wallet.address);
@@ -1139,8 +1149,9 @@ describe('IndexStaking', () => {
     });
 
     it('success - withdraw without deposit', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // mine 5 blocks
-      await mineBlocks(provider, 5);
+      await mineBlocks(hre.ethers.provider, 5);
 
       // get beforeBalanceSToken
       const beforeBalanceSToken = await sToken.balanceOf(aliceWallet.address);
@@ -1153,7 +1164,11 @@ describe('IndexStaking', () => {
       expect(beforeStake).to.be.eq(0);
 
       // get and check expectedUserRewardParams
-      const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, aliceWallet);
+      const expectedUserRewardParams = await calculateExpectedUserRewardParams(
+        hre.ethers.provider,
+        indexStaking,
+        aliceWallet,
+      );
       expect(expectedUserRewardParams.userReward).to.be.eq(0);
       expect(expectedUserRewardParams.userDeposit).to.be.eq(0);
 
@@ -1174,6 +1189,7 @@ describe('IndexStaking', () => {
     });
 
     it('success - check reward of deposit after past contract duration', async () => {
+      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // set and check firstDepositAmountSToken and firstWallet
       const firstWallet = aliceWallet;
       const firstDepositAmountSToken = expandTo18Decimals(150);
@@ -1236,7 +1252,7 @@ describe('IndexStaking', () => {
       }
 
       // mine IndexStakingParams.duration - 5 blocks
-      await mineBlocks(provider, IndexStakingParams.duration - 5);
+      await mineBlocks(hre.ethers.provider, IndexStakingParams.duration - 5);
 
       // withdraw first deposit by firstWallet
       {
@@ -1251,7 +1267,11 @@ describe('IndexStaking', () => {
         expect(beforeStake).to.be.eq(firstDepositAmountSToken);
 
         // get and check expectedUserRewardParams
-        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, firstWallet);
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(
+          hre.ethers.provider,
+          indexStaking,
+          firstWallet,
+        );
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw(withdrawAmountSToken) - successfully
@@ -1271,7 +1291,7 @@ describe('IndexStaking', () => {
       }
 
       // mine 5 blocks
-      await mineBlocks(provider, 5);
+      await mineBlocks(hre.ethers.provider, 5);
 
       // third deposit by thirdWallet - after past contract duration
       {
@@ -1311,7 +1331,11 @@ describe('IndexStaking', () => {
         expect(beforeStake).to.be.eq(0);
 
         // get and check expectedUserRewardParams
-        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, thirdWallet);
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(
+          hre.ethers.provider,
+          indexStaking,
+          thirdWallet,
+        );
         expect(expectedUserRewardParams.userReward).to.be.eq(0);
         expect(expectedUserRewardParams.userDeposit).to.be.eq(0);
 
@@ -1344,7 +1368,11 @@ describe('IndexStaking', () => {
         expect(beforeStake).to.be.eq(secondDepositAmountSToken);
 
         // get and check expectedUserRewardParams
-        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, secondWallet);
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(
+          hre.ethers.provider,
+          indexStaking,
+          secondWallet,
+        );
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw(withdrawAmountSToken) - successfully
@@ -1367,6 +1395,7 @@ describe('IndexStaking', () => {
 
   describe('stakedSnapshot', () => {
     it('success', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(10);
       expect(amountSToken).to.be.gt(0);
@@ -1398,7 +1427,11 @@ describe('IndexStaking', () => {
         await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
 
         // get and check expectedUserRewardParams
-        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, aliceWallet);
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(
+          hre.ethers.provider,
+          indexStaking,
+          aliceWallet,
+        );
 
         // run method deposit() - successfully
         await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
@@ -1417,6 +1450,7 @@ describe('IndexStaking', () => {
 
   describe('staked', () => {
     it('success', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(10);
       expect(amountSToken).to.be.gt(0);
@@ -1444,7 +1478,11 @@ describe('IndexStaking', () => {
         await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
 
         // get and check expectedUserRewardParams
-        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, aliceWallet);
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(
+          hre.ethers.provider,
+          indexStaking,
+          aliceWallet,
+        );
 
         // run method deposit() - successfully
         await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
@@ -1459,6 +1497,7 @@ describe('IndexStaking', () => {
 
   describe('accumulatedReward', () => {
     it('success', async () => {
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountSToken
       const amountSToken = expandTo18Decimals(10);
       expect(amountSToken).to.be.gt(0);
@@ -1486,7 +1525,11 @@ describe('IndexStaking', () => {
         await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
 
         // get and check expectedUserRewardParams
-        const expectedUserRewardParams = await calculateExpectedUserRewardParams(provider, indexStaking, aliceWallet);
+        const expectedUserRewardParams = await calculateExpectedUserRewardParams(
+          hre.ethers.provider,
+          indexStaking,
+          aliceWallet,
+        );
 
         // run method deposit() - successfully
         await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
@@ -1515,21 +1558,21 @@ export interface ExpectedUserRewardParams extends CalculateCurrentReward {
 }
 
 async function calculateExpectedUserRewardParams(
-  provider: Web3Provider,
+  provider: any,
   indexStaking: IndexStaking,
-  wallet: Wallet,
+  wallet: Signer,
 ): Promise<ExpectedUserRewardParams> {
-  const userDeposit = await indexStaking.stake(wallet.address);
+  const userDeposit = await indexStaking.stake(await wallet.getAddress());
   const { reward, accumulatedReward } = await calculateExpectedCurrentReward(provider, indexStaking);
   let activeStakeDeposits = await indexStaking.activeStakeDeposits();
   let staked = await indexStaking.staked();
   if (!activeStakeDeposits.eq(0)) {
     staked = staked.add(reward.div(activeStakeDeposits));
   }
-  const userStakedSnapshot = await indexStaking.stakedSnapshot(wallet.address);
+  const userStakedSnapshot = await indexStaking.stakedSnapshot(await wallet.getAddress());
   const userReward = userDeposit.mul(staked.sub(userStakedSnapshot));
   activeStakeDeposits = activeStakeDeposits.sub(userDeposit);
-  const userStake = new BigNumber(0);
+  const userStake = BigNumber.from(0);
   return {
     reward,
     accumulatedReward,
@@ -1543,7 +1586,7 @@ async function calculateExpectedUserRewardParams(
 }
 
 async function calculateExpectedCurrentReward(
-  provider: Web3Provider,
+  provider: any,
   indexStaking: IndexStaking,
 ): Promise<CalculateCurrentReward> {
   let reward: BigNumber;
@@ -1551,7 +1594,7 @@ async function calculateExpectedCurrentReward(
   const duration = await indexStaking.duration();
   const rewardSupply = await indexStaking.rewardSupply();
   let accumulatedReward = await indexStaking.accumulatedReward();
-  const blockNumber = new BigNumber(await provider.getBlockNumber()).add(1); // get number of next block
+  const blockNumber = BigNumber.from(await provider.getBlockNumber()).add(1); // get number of next block
   if (startBlock.add(duration).gt(blockNumber)) {
     reward = rewardSupply.mul(blockNumber).mul(blockNumber.sub(startBlock)).div(startBlock.add(duration).mul(duration));
   } else {
