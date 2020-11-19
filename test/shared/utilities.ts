@@ -1,5 +1,6 @@
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 import { BigNumber, BytesLike } from 'ethers';
+import yesno from 'yesno';
 
 export function expandTo18Decimals(n: number): BigNumber {
   return BigNumber.from(n).mul(BigNumber.from(10).pow(18));
@@ -95,4 +96,28 @@ export function convertStringToArrayish(data: string): BytesLike {
   }
   const hexNumber = dataBuffer.toString('hex');
   return `0x${hexNumber}`;
+}
+
+export const USDCAddress: string = (() => {
+  switch (network.name) {
+    case 'homestead':
+      return '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'; // Mainnet
+    case 'rinkeby':
+    case 'ropsten':
+    case 'hardhat':
+    case 'localhost':
+      return '0x0000000000000000000000000000000000000000';
+    default:
+      throw new Error(`Unknown network ${network?.name}`);
+  }
+})();
+
+export async function requestConfirmation(message = 'Ready to continue?'): Promise<void> {
+  const ok = await yesno({
+    yesValues: ['', 'yes', 'y', 'yes'],
+    question: message,
+  });
+  if (!ok) {
+    throw new Error('Script cancelled.');
+  }
 }
