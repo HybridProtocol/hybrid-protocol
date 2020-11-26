@@ -1,7 +1,7 @@
-const Migrations = artifacts.require("Migrations");
+const Migrations = artifacts.require('Migrations');
 
-module.exports = function(deployer, network) {
+module.exports = function (deployer, network) {
   if (network === 'development' || network === 'coverage') {
-      deployer.deploy(Migrations);
+    deployer.deploy(Migrations);
   }
 };

@@ -5,3 +5,4 @@ cache
 typechain
 coverage
 .DS_Store
+presale/build

@@ -164,12 +164,12 @@ You cannot exit 100% using Pool Tokens (rebind will revert). It is possible to d
 Specifically, if a CRP has the canRemoveAllTokens permission, it is possible to call removeToken for every token in the pool, and recover all assets without loss. (Otherwise, with only canAddRemoveTokens permission, the pool would always need to contain at least two tokens, and you could only "withdraw" 1/3 of the balance at a time through the exit methods.) There are special cases where this is appropriate (e.g., an "auction," where only the controller provides liquidity), but any pools with either "removeToken" right enabled require a high level of trust, since the controller could remove all assets from the pool at any time.
 
 ## How to create Configurable Right Pool
-At first need to get factory for Configurable Right Pool creation. It avaiable by address in **Rinkeby** testnet
+At first you need to get factory for Configurable Right Pool creation. It is avaiable at address in **Ropsten** testnet
 
 ```javascript
-const crpFactory = await CRPFactory.at('0x999A3Ab5CF12F884DAc51B426eF1B04A7C3C8deD')
+const crpFactory = await CRPFactory.at('0x4db44402434afe4B0d27D8576B1542c7f213ac23')
 ```
-For this one need to describe permission and pool parameters
+For this you need to describe permission and pool parameters
 Permission params:
 
 ```javascript
@@ -183,14 +183,14 @@ const permissions = {
   canRemoveAllTokens: false
 }
 ```
-For pool params need to get deployed test WETH and XYZ tokens and determine additional values
+For pool params you need to get already deployed test USDC and HBT tokens and determine additional values
 
 ```javascript
-const WETH = '0x1c6b4a446157FB1d609A7F8f077DAF82936a5191'
-const XYZ = '0x9D1944Fda601A031Ceb0a2b180ae36238eCb2C13'
+const WETH = '0x00'
+const XYZ = '0x00'
 
-const startWeights = [toWei('1'), toWei('39')];
-const startBalances = [toWei('80000'), toWei('40')];
+const startWeights = [toWei('36'), toWei('4')];
+const startBalances = [toWei('9000000'), toWei('1000000')];
 const swapFee = 10 ** 15;
 ```
 Pool params:
@@ -199,7 +199,7 @@ Pool params:
 const poolParams = { 
   poolTokenSymbol: 'AYE',
   poolTokenName: 'AYE',
-  constituentTokens: [WETH, XYZ],
+  constituentTokens: [USDC, HBT],
   tokenBalances: startBalances,
   tokenWeights: startWeights,
   swapFee: swapFee
@@ -208,13 +208,13 @@ const poolParams = {
 In addition need to know Balancer Factory address
 
 ```javascript
-const BFactoryAddress = '0x3D088F1Ed83B32D141934973042FBc5A0980F89a'
+const BFactoryAddress = '0x00'
 ```
 Finally CRP could be created
 ```javascript
 const crp = await crpFactory.newCrp(BFactoryAddress, poolParams, permissions)
 ```
-but you can get it in **Rinkeby** testnet by the address
+but you can get it in **Ropsten** testnet by the address
 ```javascript
 const crp = await ConfigurableRightsPool.at('0x974327bdc8eF4367Af6E3A412E12EB4d7bb52D45')
 ```
@@ -223,8 +223,6 @@ const crp = await ConfigurableRightsPool.at('0x974327bdc8eF4367Af6E3A412E12EB4d7
 
 
 ### Update weights
-In order to make the contract update weights according to plan, you need to call external function `pokeWeights()`. But at first pool has to be created by the CRP. For this one need approve pool tokens
-for CRP address 
 
 ```javascript
 await weth.approve(crp.address, MAX)
@@ -234,10 +232,5 @@ and then pool could be created
 ```javascript
 await crp.createPool(toWei('100'), 10, 10)
 ```
-Finally, weights could be changed
 
-```javascript
-await crp.pokeWeights()
-```
-
-Example of transaction you can find by the link https://rinkeby.etherscan.io/tx/0x4b9b36945f2629adeb1228543bc836bb8160a9c9b133b021c54a838032285511
+Please look at the `test/crpPresale.js` to understand the flow of weights update
