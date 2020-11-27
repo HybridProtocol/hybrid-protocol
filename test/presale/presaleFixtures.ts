@@ -3,11 +3,13 @@ import { SaleHybridToken } from '../../typechain/SaleHybridToken';
 import { AlphaPresale } from '../../typechain/AlphaPresale';
 import { BetaPresale } from '../../typechain/BetaPresale';
 import { GammaPresale } from '../../typechain/GammaPresale';
-import { SaleHybridTokenFactory } from '../../typechain/SaleHybridTokenFactory';
-import { AlphaPresaleFactory } from '../../typechain/AlphaPresaleFactory';
-import { BetaPresaleFactory } from '../../typechain/BetaPresaleFactory';
-import { GammaPresaleFactory } from '../../typechain/GammaPresaleFactory';
-import { HybridTokenFactory } from '../../typechain/HybridTokenFactory';
+import {
+  AlphaPresale__factory,
+  BetaPresale__factory,
+  GammaPresale__factory,
+  HybridToken__factory,
+  SaleHybridToken__factory,
+} from '../../typechain';
 import { expandTo18Decimals } from '../shared/utilities';
 
 export interface PresaleFixture {
@@ -30,27 +32,27 @@ const USDCDeployParams = {
 };
 
 export async function presaleFixture([wallet]: Signer[]): Promise<PresaleFixture> {
-  const USDC = await new HybridTokenFactory(wallet).deploy(
+  const USDC = await new HybridToken__factory(wallet).deploy(
     USDCDeployParams.name,
     USDCDeployParams.symbol,
     await wallet.getAddress(),
     USDCDeployParams.initialBalance,
     overrides,
   );
-  const sHBT = await new SaleHybridTokenFactory(wallet).deploy(overrides);
-  const alphaPresale = await new AlphaPresaleFactory(wallet).deploy(
+  const sHBT = await new SaleHybridToken__factory(wallet).deploy(overrides);
+  const alphaPresale = await new AlphaPresale__factory(wallet).deploy(
     USDC.address,
     sHBT.address,
     presaleDuration,
     overrides,
   );
-  const betaPresale = await new BetaPresaleFactory(wallet).deploy(
+  const betaPresale = await new BetaPresale__factory(wallet).deploy(
     USDC.address,
     sHBT.address,
     presaleDuration,
     overrides,
   );
-  const gammaPresale = await new GammaPresaleFactory(wallet).deploy(
+  const gammaPresale = await new GammaPresale__factory(wallet).deploy(
     USDC.address,
     sHBT.address,
     presaleDuration,
