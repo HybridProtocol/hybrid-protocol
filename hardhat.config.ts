@@ -12,8 +12,8 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const secret: string = process.env.MNEMONIC_OR_PRIVATE_KEY as string;
-const etherscanKey: string = process.env.ETHERSCAN_API_KEY as string;
+// const secret: string = process.env.MNEMONIC_OR_PRIVATE_KEY as string;
+// const etherscanKey: string = process.env.ETHERSCAN_API_KEY as string;
 
 task('accounts', 'Prints the list of accounts', async (args, hre) => {
   const accounts = await hre.ethers.getSigners();
