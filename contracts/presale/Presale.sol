@@ -72,10 +72,9 @@ contract Presale is Ownable, PresaleConstants, ReentrancyGuard {
     }
 
     function presaleIsActive() external view returns (bool) {
-         if (startBlock != 0 && ((startBlock + duration) < block.number)) {
-             return true;
-         } else {
-             return false;
-         }
+        if ((startBlock != 0) && (block.number <= startBlock + duration)) {
+            return true;
+        }
+        return false;
     }
 }
