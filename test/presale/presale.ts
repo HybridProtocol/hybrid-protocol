@@ -3,8 +3,7 @@ import { expect } from 'chai';
 import { presaleDuration, presaleFixture } from './presaleFixtures';
 import { SaleHybridToken } from '../../typechain/SaleHybridToken';
 import { expandTo18Decimals, mineBlocks } from '../shared/utilities';
-import { BigNumber } from 'ethers';
-import { Contract } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 
 const ERRORS = {
   IS_NOT_OWNER: 'Ownable: caller is not the owner',
@@ -521,6 +520,32 @@ async function testPresaleContracts(
       // get and check presaleContract sHBT balance
       const afterPresaleContractBalanceSHBT = await sHBT.balanceOf(presaleContract.address);
       expect(afterPresaleContractBalanceSHBT).to.be.eq(0);
+    });
+  });
+
+  describe('presaleIsActive', () => {
+    it('success', async () => {
+      let presaleIsActive: boolean;
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
+
+      // before start, isActive should be false
+      presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
+      expect(presaleIsActive).to.be.eq(false);
+
+      // after start, isActive should be true
+      await presaleContract.connect(ownerWallet).start();
+      presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
+      expect(presaleIsActive).to.be.eq(true);
+
+      // after mine presaleDuration - 5 blocks, isActive should be true
+      await mineBlocks(hre.ethers.provider, presaleDuration - 5);
+      presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
+      expect(presaleIsActive).to.be.eq(true);
+
+      // after mine 6 blocks, isActive should be false
+      await mineBlocks(hre.ethers.provider, 6);
+      presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
+      expect(presaleIsActive).to.be.eq(false);
     });
   });
 }
