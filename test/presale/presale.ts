@@ -27,6 +27,50 @@ describe('Presale', () => {
   describe('GammaPresale', async () => {
     await testPresaleContracts('gammaPresale', 'GAMMA_PRESALE_LIMIT', 'GAMMA_PRESALE_RATE', 'GAMMA_PURCHASE_LIMIT');
   });
+
+  describe('Test active presale address', async () => {
+    it('success', async () => {
+      let presaleAddress;
+      const nullAddress = '0x0000000000000000000000000000000000000000';
+      const signers = await hre.ethers.getSigners();
+      const [ownerWallet, aliceWallet] = signers;
+
+      // load fixture
+      const fixture = await presaleFixture(signers);
+
+      // get alphaPresale, betaPresale and gammaPresale contracts
+      const alphaPresale = fixture.alphaPresale;
+      const betaPresale = fixture.betaPresale;
+      const gammaPresale = fixture.gammaPresale;
+
+      // get sHBT contact
+      const sHBT = fixture.sHBT;
+      await sHBT.mintPresale(fixture.alphaPresale.address, fixture.betaPresale.address, fixture.gammaPresale.address);
+      await sHBT.addAddressesToMainteiners([
+        fixture.alphaPresale.address,
+        fixture.betaPresale.address,
+        fixture.gammaPresale.address,
+      ]);
+
+      // get activePresaleAddress from sHBT contract
+      const contractList = [alphaPresale, betaPresale, gammaPresale];
+      for (const contract of contractList) {
+        // before start contract
+        presaleAddress = await sHBT.connect(aliceWallet).activePresaleAddress();
+        expect(presaleAddress).to.be.eq(nullAddress);
+
+        // after start contract
+        await contract.connect(ownerWallet).start();
+        presaleAddress = await sHBT.connect(aliceWallet).activePresaleAddress();
+        expect(presaleAddress).to.be.eq(contract.address);
+
+        // after mine presaleDuration + 1 blocks
+        await mineBlocks(hre.ethers.provider, presaleDuration + 1);
+        presaleAddress = await sHBT.connect(aliceWallet).activePresaleAddress();
+        expect(presaleAddress).to.be.eq(nullAddress);
+      }
+    });
+  });
 });
 
 async function testPresaleContracts(
