@@ -1,7 +1,6 @@
 import { ethers } from 'hardhat';
 import { Overrides } from 'ethers';
 import { parseBigNumber, parseWallet, parseEthAddress } from '../test/shared/parser';
-import { USDCAddress as _USDCAddress } from '../test/shared/utilities';
 import { IndexGovernance__factory } from '../typechain/factories/IndexGovernance__factory';
 import { requestConfirmation } from '../test/shared/utilities';
 

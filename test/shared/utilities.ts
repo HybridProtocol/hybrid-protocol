@@ -78,7 +78,7 @@ export function parseBigNumbers(property: string, value: string | undefined, dec
   return array.map((v, i) => parseBigNumber(`${property}[${i}]`, v, decimals));
 }
 
-export async function mineBlock(provider: any, timestamp?: number): Promise<void> {
+export async function mineBlock(provider: any): Promise<void> {
   await provider.send('evm_mine', []);
 }
 

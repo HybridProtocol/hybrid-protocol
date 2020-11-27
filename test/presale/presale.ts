@@ -32,11 +32,10 @@ describe('Presale', () => {
     it('success', async () => {
       let presaleAddress;
       const nullAddress = '0x0000000000000000000000000000000000000000';
-      const signers = await hre.ethers.getSigners();
-      const [ownerWallet, aliceWallet] = signers;
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
 
       // load fixture
-      const fixture = await presaleFixture(signers);
+      const fixture = await presaleFixture([ownerWallet]);
 
       // get alphaPresale, betaPresale and gammaPresale contracts
       const alphaPresale = fixture.alphaPresale;
@@ -86,12 +85,16 @@ async function testPresaleContracts(
   let presaleLimit: BigNumber;
   let presaleRate: BigNumber;
   let purchaseLimit: BigNumber;
+  let ownerWallet: any;
+  let aliceWallet: any;
+  let bobWallet: any;
+  let eveWallet: any;
 
   beforeEach(async () => {
-    const signers = await hre.ethers.getSigners();
-    const [ownerWallet, aliceWallet, bobWallet] = signers;
+    [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
+
     // load fixture
-    const fixture = await presaleFixture(signers);
+    const fixture = await presaleFixture([ownerWallet]);
 
     // update contract variables
     USDC = fixture.USDC;
@@ -118,7 +121,6 @@ async function testPresaleContracts(
 
   describe('start', () => {
     it('fail - not owner', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // check contract owner - not owner
       await checkAddressContractOwner(aliceWallet.address, presaleContract, false);
 
@@ -127,7 +129,6 @@ async function testPresaleContracts(
     });
 
     it('fail - owner (Presale: ALREADY_STARTED)', async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // check contract owner - owner
       await checkAddressContractOwner(ownerWallet.address, presaleContract, true);
 
@@ -139,7 +140,6 @@ async function testPresaleContracts(
     });
 
     it('success - owner', async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // check contract owner - owner
       await checkAddressContractOwner(ownerWallet.address, presaleContract, true);
 
@@ -150,13 +150,11 @@ async function testPresaleContracts(
 
   describe('buy', async () => {
     beforeEach(async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // start presale
       await presaleContract.connect(ownerWallet).start();
     });
 
     it('fail - invalid block.number (Presale: INVALID_DATE)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // mine blocks
       await mineBlocks(hre.ethers.provider, presaleDuration);
 
@@ -171,7 +169,6 @@ async function testPresaleContracts(
     });
 
     it('fail - invalid amountUSDC (Presale: ZERO_AMOUNT_USDC)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(0);
       expect(amountUSDC).to.be.eq(0);
@@ -183,7 +180,6 @@ async function testPresaleContracts(
     });
 
     it('fail - invalid transferFromERC20 - not enough allowance, enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(150);
       expect(amountUSDC).to.be.gt(0);
@@ -203,7 +199,6 @@ async function testPresaleContracts(
     });
 
     it('fail - invalid transferFromERC20 - enough allowance, not enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(15000);
       expect(amountUSDC).to.be.gt(0);
@@ -268,8 +263,6 @@ async function testPresaleContracts(
     // });
 
     it('success - buy sHBT count <= purchaseLimit', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
-
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(150);
       expect(amountUSDC).to.be.gt(0);
@@ -322,7 +315,6 @@ async function testPresaleContracts(
     });
 
     it('success - buy sHBT count > purchaseLimit', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(1000000);
       expect(amountUSDC).to.be.gt(0);
@@ -379,7 +371,6 @@ async function testPresaleContracts(
     });
 
     it('success - two buys, each buy sHBT count > purchaseLimit', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const totalAmountUSDC = expandTo18Decimals(1000000);
       const amount1USDC = totalAmountUSDC.div(2);
@@ -446,13 +437,11 @@ async function testPresaleContracts(
 
   describe('purchasedAmount', () => {
     beforeEach(async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // start presale
       await presaleContract.connect(ownerWallet).start();
     });
 
     it('success', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get and check beforeBalanceSHBT
       const beforeBalanceSHBT = await sHBT.balanceOf(aliceWallet.address);
       expect(beforeBalanceSHBT).to.be.eq(0);
@@ -481,13 +470,11 @@ async function testPresaleContracts(
 
   describe('sendUSDC', () => {
     beforeEach(async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // start presale
       await presaleContract.connect(ownerWallet).start();
     });
 
     it('fail - not owner', async () => {
-      const [ownerWallet, aliceWallet, bobWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(333);
       expect(amountUSDC).to.be.gt(0);
@@ -502,7 +489,6 @@ async function testPresaleContracts(
     });
 
     it('success - owner', async () => {
-      const [ownerWallet, aliceWallet, bobWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(333);
       expect(amountUSDC).to.be.gt(0);
@@ -532,7 +518,6 @@ async function testPresaleContracts(
 
   describe('burn', () => {
     beforeEach(async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // start presale
       await presaleContract.connect(ownerWallet).start();
 
@@ -541,7 +526,6 @@ async function testPresaleContracts(
     });
 
     it('fail - not owner', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // check contract owner - not owner
       await checkAddressContractOwner(aliceWallet.address, presaleContract, false);
 
@@ -550,7 +534,6 @@ async function testPresaleContracts(
     });
 
     it('success - owner', async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // get presaleContract sHBT balance
       const beforePresaleContractBalanceSHBT = await sHBT.balanceOf(presaleContract.address);
       expect(beforePresaleContractBalanceSHBT).to.be.gt(0);
@@ -570,7 +553,6 @@ async function testPresaleContracts(
   describe('presaleIsActive', () => {
     it('success', async () => {
       let presaleIsActive: boolean;
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
 
       // before start, isActive should be false
       presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
