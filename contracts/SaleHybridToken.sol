@@ -4,6 +4,9 @@ pragma solidity >=0.6.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./presale/AlphaPresale.sol";
+import "./presale/BetaPresale.sol";
+import "./presale/GammaPresale.sol";
 import "./presale/PresaleConstants.sol";
 import "../utils/Maintenance.sol";
 
@@ -63,5 +66,18 @@ contract SaleHybridToken is ERC20, Ownable, Maintenance, PresaleConstants, Reent
         require(!isBurnedFor[_presale], "SaleHybridToken: ONLY_ONCE_BURN");
         _burn(_presale, _amount);
         isBurnedFor[_presale] = true;
+    }
+
+    function activePresaleAddress() external view returns (address) {
+        AlphaPresale alphaPresaleContract = AlphaPresale(alphaPresale);
+        if (alphaPresaleContract.presaleIsActive()) { return address(alphaPresale); }
+
+        BetaPresale betaPresaleContract = BetaPresale(betaPresale);
+        if (betaPresaleContract.presaleIsActive()) { return address(betaPresale); }
+
+        GammaPresale gammaPresaleContract = GammaPresale(gammaPresale);
+        if (gammaPresaleContract.presaleIsActive()) { return address(gammaPresale); }
+
+        return address(0);
     }
 }
