@@ -2,6 +2,7 @@ import hre from 'hardhat';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { Signer } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { expandTo18Decimals, mineBlocks } from '../shared/utilities';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexStaking } from '../../typechain/IndexStaking';
@@ -19,10 +20,10 @@ describe('IndexStaking', () => {
   let rToken: HybridToken;
   let indexStaking: IndexStaking;
   let testStartBlockNumber: number;
-  let ownerWallet: any;
-  let aliceWallet: any;
-  let bobWallet: any;
-  let eveWallet: any;
+  let ownerWallet: SignerWithAddress;
+  let aliceWallet: SignerWithAddress;
+  let bobWallet: SignerWithAddress;
+  let eveWallet: SignerWithAddress;
 
   beforeEach(async () => {
     [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
