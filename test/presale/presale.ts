@@ -1,9 +1,10 @@
 import hre from 'hardhat';
 import { expect } from 'chai';
+import { BigNumber, Contract } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { presaleDuration, presaleFixture } from './presaleFixtures';
 import { SaleHybridToken } from '../../typechain/SaleHybridToken';
 import { expandTo18Decimals, mineBlocks } from '../shared/utilities';
-import { BigNumber, Contract } from 'ethers';
 
 const ERRORS = {
   IS_NOT_OWNER: 'Ownable: caller is not the owner',
@@ -85,10 +86,10 @@ async function testPresaleContracts(
   let presaleLimit: BigNumber;
   let presaleRate: BigNumber;
   let purchaseLimit: BigNumber;
-  let ownerWallet: any;
-  let aliceWallet: any;
-  let bobWallet: any;
-  let eveWallet: any;
+  let ownerWallet: SignerWithAddress;
+  let aliceWallet: SignerWithAddress;
+  let bobWallet: SignerWithAddress;
+  let eveWallet: SignerWithAddress;
 
   beforeEach(async () => {
     [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();

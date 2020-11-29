@@ -1,11 +1,11 @@
 import hre from 'hardhat';
 import { expect } from 'chai';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { IndexHybridToken } from '../../typechain/IndexHybridToken';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexGovernance } from '../../typechain/IndexGovernance';
 import { indexGovernanceFixture, indexGovernanceMinDuration } from './indexGovernanceFixtures';
 import { convertStringToArrayish, expandTo18Decimals, mineBlocks } from '../shared/utilities';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 
 const ERRORS = {
   INVALID_LENGTH: 'IndexGovernance: INVALID_LENGTH',
@@ -27,10 +27,10 @@ describe('IndexGovernance', () => {
   let stakingToken: HybridToken;
   let indexGovernance: IndexGovernance;
   let indexGovernanceEmptyProposal: any;
-  let ownerWallet: any;
-  let aliceWallet: any;
-  let bobWallet: any;
-  let otherWallet1: any;
+  let ownerWallet: SignerWithAddress;
+  let aliceWallet: SignerWithAddress;
+  let bobWallet: SignerWithAddress;
+  let otherWallet1: SignerWithAddress;
 
   const assetArrayishValues = {
     BTC: convertStringToArrayish('BTC'),
