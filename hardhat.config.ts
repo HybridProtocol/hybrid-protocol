@@ -12,8 +12,8 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// const secret: string = process.env.MNEMONIC_OR_PRIVATE_KEY as string;
-// const etherscanKey: string = process.env.ETHERSCAN_API_KEY as string;
+const secret: string = process.env.MNEMONIC_OR_PRIVATE_KEY as string;
+const etherscanKey: string = process.env.ETHERSCAN_API_KEY as string;
 
 task('accounts', 'Prints the list of accounts', async (args, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -46,11 +46,11 @@ const config: HardhatUserConfig = {
     },
     ropsten: {
       url: `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      // accounts: [secret],
+      accounts: [secret],
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      // accounts: [secret],
+      accounts: [secret],
     },
     coverage: {
       url: 'http://127.0.0.1:8555', // Coverage launches its own ganache-cli client
@@ -60,11 +60,11 @@ const config: HardhatUserConfig = {
     outDir: 'typechain',
     target: 'ethers-v5',
   },
-  // etherscan: {
-  //   // Your API key for Etherscan
-  //   // Obtain one at https://etherscan.io/
-  //   apiKey: etherscanKey,
-  // }
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: etherscanKey,
+  },
   // gasReporter: {
   //   enabled: COINMARKETCAP_API_KEY ? true : false,
   //   // coinmarketcap: COINMARKETCAP_API_KEY,
