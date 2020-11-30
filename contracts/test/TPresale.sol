@@ -29,10 +29,10 @@ contract TPresale is Ownable, PresaleConstants, ReentrancyGuard {
 
     event Sold(address account, uint amount);
 
-    constructor(address _USDC, address _SHBT) public {
+    constructor(address _USDC, address _SHBT, uint _duration) public {
         USDC = IERC20(_USDC);
         SHBT = ISaleHybridToken(_SHBT);
-        duration = 10;
+        duration = _duration;
     }
 
     function start() external nonReentrant onlyOwner {

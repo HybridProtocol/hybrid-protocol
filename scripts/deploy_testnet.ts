@@ -6,6 +6,7 @@ async function main() {
   let tx;
   const aliceWallet = '0x76Fd4B48af98436A26Bf649703cE7A2620F4dEEa';
   const hbtTotalSupply = 100000000;
+  const presaleDuration = 10000;
   const [deployer] = await ethers.getSigners();
   const assetArrayishValues = {
     BTC: convertStringToArrayish('BTC'),
@@ -62,21 +63,21 @@ async function main() {
   console.log((await usdc.balanceOf(aliceWallet)).toString(), ' USDC minted to:', aliceWallet);
 
   const AlphaPresale = await hre.ethers.getContractFactory('TAlphaPresale');
-  const alphaPresale = await AlphaPresale.deploy(usdcAddress, saleHybridToken.address);
+  const alphaPresale = await AlphaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await alphaPresale.deployed();
   console.log('Alpha Presale deployed to:', alphaPresale.address);
   await alphaPresale.start();
   console.log('Alpha Presale was started');
 
   const BetaPresale = await hre.ethers.getContractFactory('TBetaPresale');
-  const betaPresale = await BetaPresale.deploy(usdcAddress, saleHybridToken.address);
+  const betaPresale = await BetaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await betaPresale.deployed();
   console.log('Beta Presale deployed to:', betaPresale.address);
   await betaPresale.start();
   console.log('Beta Presale was started');
 
   const GammaPresale = await hre.ethers.getContractFactory('TGammaPresale');
-  const gammaPresale = await GammaPresale.deploy(usdcAddress, saleHybridToken.address);
+  const gammaPresale = await GammaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await gammaPresale.deployed();
   console.log('Gamma Presale deployed to:', gammaPresale.address);
   await gammaPresale.start();
