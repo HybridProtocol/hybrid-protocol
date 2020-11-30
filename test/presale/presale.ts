@@ -1,10 +1,10 @@
 import hre from 'hardhat';
 import { expect } from 'chai';
+import { BigNumber, Contract } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { presaleDuration, presaleFixture } from './presaleFixtures';
 import { SaleHybridToken } from '../../typechain/SaleHybridToken';
 import { expandTo18Decimals, mineBlocks } from '../shared/utilities';
-import { BigNumber } from 'ethers';
-import { Contract } from 'ethers';
 
 const ERRORS = {
   IS_NOT_OWNER: 'Ownable: caller is not the owner',
@@ -28,6 +28,49 @@ describe('Presale', () => {
   describe('GammaPresale', async () => {
     await testPresaleContracts('gammaPresale', 'GAMMA_PRESALE_LIMIT', 'GAMMA_PRESALE_RATE', 'GAMMA_PURCHASE_LIMIT');
   });
+
+  describe('Test active presale address', async () => {
+    it('success', async () => {
+      let presaleAddress;
+      const nullAddress = '0x0000000000000000000000000000000000000000';
+      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
+
+      // load fixture
+      const fixture = await presaleFixture([ownerWallet]);
+
+      // get alphaPresale, betaPresale and gammaPresale contracts
+      const alphaPresale = fixture.alphaPresale;
+      const betaPresale = fixture.betaPresale;
+      const gammaPresale = fixture.gammaPresale;
+
+      // get sHBT contact
+      const sHBT = fixture.sHBT;
+      await sHBT.mintPresale(fixture.alphaPresale.address, fixture.betaPresale.address, fixture.gammaPresale.address);
+      await sHBT.addAddressesToMainteiners([
+        fixture.alphaPresale.address,
+        fixture.betaPresale.address,
+        fixture.gammaPresale.address,
+      ]);
+
+      // get activePresaleAddress from sHBT contract
+      const contractList = [alphaPresale, betaPresale, gammaPresale];
+      for (const contract of contractList) {
+        // before start contract
+        presaleAddress = await sHBT.connect(aliceWallet).activePresaleAddress();
+        expect(presaleAddress).to.be.eq(nullAddress);
+
+        // after start contract
+        await contract.connect(ownerWallet).start();
+        presaleAddress = await sHBT.connect(aliceWallet).activePresaleAddress();
+        expect(presaleAddress).to.be.eq(contract.address);
+
+        // after mine presaleDuration + 1 blocks
+        await mineBlocks(hre.ethers.provider, presaleDuration + 1);
+        presaleAddress = await sHBT.connect(aliceWallet).activePresaleAddress();
+        expect(presaleAddress).to.be.eq(nullAddress);
+      }
+    });
+  });
 });
 
 async function testPresaleContracts(
@@ -43,12 +86,16 @@ async function testPresaleContracts(
   let presaleLimit: BigNumber;
   let presaleRate: BigNumber;
   let purchaseLimit: BigNumber;
+  let ownerWallet: SignerWithAddress;
+  let aliceWallet: SignerWithAddress;
+  let bobWallet: SignerWithAddress;
+  let eveWallet: SignerWithAddress;
 
   beforeEach(async () => {
-    const signers = await hre.ethers.getSigners();
-    const [ownerWallet, aliceWallet, bobWallet] = signers;
+    [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
+
     // load fixture
-    const fixture = await presaleFixture(signers);
+    const fixture = await presaleFixture([ownerWallet]);
 
     // update contract variables
     USDC = fixture.USDC;
@@ -75,7 +122,6 @@ async function testPresaleContracts(
 
   describe('start', () => {
     it('fail - not owner', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // check contract owner - not owner
       await checkAddressContractOwner(aliceWallet.address, presaleContract, false);
 
@@ -84,7 +130,6 @@ async function testPresaleContracts(
     });
 
     it('fail - owner (Presale: ALREADY_STARTED)', async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // check contract owner - owner
       await checkAddressContractOwner(ownerWallet.address, presaleContract, true);
 
@@ -96,7 +141,6 @@ async function testPresaleContracts(
     });
 
     it('success - owner', async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // check contract owner - owner
       await checkAddressContractOwner(ownerWallet.address, presaleContract, true);
 
@@ -107,13 +151,11 @@ async function testPresaleContracts(
 
   describe('buy', async () => {
     beforeEach(async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // start presale
       await presaleContract.connect(ownerWallet).start();
     });
 
     it('fail - invalid block.number (Presale: INVALID_DATE)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // mine blocks
       await mineBlocks(hre.ethers.provider, presaleDuration);
 
@@ -128,7 +170,6 @@ async function testPresaleContracts(
     });
 
     it('fail - invalid amountUSDC (Presale: ZERO_AMOUNT_USDC)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(0);
       expect(amountUSDC).to.be.eq(0);
@@ -140,7 +181,6 @@ async function testPresaleContracts(
     });
 
     it('fail - invalid transferFromERC20 - not enough allowance, enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(150);
       expect(amountUSDC).to.be.gt(0);
@@ -160,7 +200,6 @@ async function testPresaleContracts(
     });
 
     it('fail - invalid transferFromERC20 - enough allowance, not enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, eveWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(15000);
       expect(amountUSDC).to.be.gt(0);
@@ -225,8 +264,6 @@ async function testPresaleContracts(
     // });
 
     it('success - buy sHBT count <= purchaseLimit', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
-
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(150);
       expect(amountUSDC).to.be.gt(0);
@@ -279,7 +316,6 @@ async function testPresaleContracts(
     });
 
     it('success - buy sHBT count > purchaseLimit', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(1000000);
       expect(amountUSDC).to.be.gt(0);
@@ -336,7 +372,6 @@ async function testPresaleContracts(
     });
 
     it('success - two buys, each buy sHBT count > purchaseLimit', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const totalAmountUSDC = expandTo18Decimals(1000000);
       const amount1USDC = totalAmountUSDC.div(2);
@@ -403,13 +438,11 @@ async function testPresaleContracts(
 
   describe('purchasedAmount', () => {
     beforeEach(async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // start presale
       await presaleContract.connect(ownerWallet).start();
     });
 
     it('success', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get and check beforeBalanceSHBT
       const beforeBalanceSHBT = await sHBT.balanceOf(aliceWallet.address);
       expect(beforeBalanceSHBT).to.be.eq(0);
@@ -438,13 +471,11 @@ async function testPresaleContracts(
 
   describe('sendUSDC', () => {
     beforeEach(async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // start presale
       await presaleContract.connect(ownerWallet).start();
     });
 
     it('fail - not owner', async () => {
-      const [ownerWallet, aliceWallet, bobWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(333);
       expect(amountUSDC).to.be.gt(0);
@@ -459,7 +490,6 @@ async function testPresaleContracts(
     });
 
     it('success - owner', async () => {
-      const [ownerWallet, aliceWallet, bobWallet] = await hre.ethers.getSigners();
       // set and check amountUSDC
       const amountUSDC = expandTo18Decimals(333);
       expect(amountUSDC).to.be.gt(0);
@@ -489,7 +519,6 @@ async function testPresaleContracts(
 
   describe('burn', () => {
     beforeEach(async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // start presale
       await presaleContract.connect(ownerWallet).start();
 
@@ -498,7 +527,6 @@ async function testPresaleContracts(
     });
 
     it('fail - not owner', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // check contract owner - not owner
       await checkAddressContractOwner(aliceWallet.address, presaleContract, false);
 
@@ -507,7 +535,6 @@ async function testPresaleContracts(
     });
 
     it('success - owner', async () => {
-      const [ownerWallet] = await hre.ethers.getSigners();
       // get presaleContract sHBT balance
       const beforePresaleContractBalanceSHBT = await sHBT.balanceOf(presaleContract.address);
       expect(beforePresaleContractBalanceSHBT).to.be.gt(0);
@@ -521,6 +548,31 @@ async function testPresaleContracts(
       // get and check presaleContract sHBT balance
       const afterPresaleContractBalanceSHBT = await sHBT.balanceOf(presaleContract.address);
       expect(afterPresaleContractBalanceSHBT).to.be.eq(0);
+    });
+  });
+
+  describe('presaleIsActive', () => {
+    it('success', async () => {
+      let presaleIsActive: boolean;
+
+      // before start, isActive should be false
+      presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
+      expect(presaleIsActive).to.be.eq(false);
+
+      // after start, isActive should be true
+      await presaleContract.connect(ownerWallet).start();
+      presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
+      expect(presaleIsActive).to.be.eq(true);
+
+      // after mine presaleDuration - 5 blocks, isActive should be true
+      await mineBlocks(hre.ethers.provider, presaleDuration - 5);
+      presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
+      expect(presaleIsActive).to.be.eq(true);
+
+      // after mine 6 blocks, isActive should be false
+      await mineBlocks(hre.ethers.provider, 6);
+      presaleIsActive = await presaleContract.connect(aliceWallet).presaleIsActive();
+      expect(presaleIsActive).to.be.eq(false);
     });
   });
 }

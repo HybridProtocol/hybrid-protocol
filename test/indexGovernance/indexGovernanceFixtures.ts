@@ -3,9 +3,7 @@ import { expandTo18Decimals } from '../shared/utilities';
 import { IndexHybridToken } from '../../typechain/IndexHybridToken';
 import { IndexGovernance } from '../../typechain/IndexGovernance';
 import { HybridToken } from '../../typechain/HybridToken';
-import { IndexHybridTokenFactory } from '../../typechain/IndexHybridTokenFactory';
-import { IndexGovernanceFactory } from '../../typechain/IndexGovernanceFactory';
-import { HybridTokenFactory } from '../../typechain/HybridTokenFactory';
+import { HybridToken__factory, IndexGovernance__factory, IndexHybridToken__factory } from '../../typechain';
 
 export interface IndexGovernanceFixture {
   indexHybridToken: IndexHybridToken;
@@ -29,19 +27,19 @@ const StakingTokenDeployParams = {
 };
 
 export async function indexGovernanceFixture([wallet]: Signer[]): Promise<IndexGovernanceFixture> {
-  const indexHybridToken = await new IndexHybridTokenFactory(wallet).deploy(
+  const indexHybridToken = await new IndexHybridToken__factory(wallet).deploy(
     IndexHybridTokenDeployParams.totalSupply,
     IndexHybridTokenDeployParams.maxMintedSupply,
     overrides,
   );
-  const stakingToken = await new HybridTokenFactory(wallet).deploy(
+  const stakingToken = await new HybridToken__factory(wallet).deploy(
     StakingTokenDeployParams.name,
     StakingTokenDeployParams.symbol,
     await wallet.getAddress(),
     StakingTokenDeployParams.initialBalance,
     overrides,
   );
-  const indexGovernance = await new IndexGovernanceFactory(wallet).deploy(
+  const indexGovernance = await new IndexGovernance__factory(wallet).deploy(
     indexHybridToken.address,
     stakingToken.address,
     indexGovernanceMinDuration,

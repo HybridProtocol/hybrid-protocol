@@ -70,4 +70,8 @@ contract Presale is Ownable, PresaleConstants, ReentrancyGuard {
     function purchasedAmount(address _account) external view returns (uint) {
         return purchasedAmountOf[_account];
     }
+
+    function presaleIsActive() external view returns (bool) {
+        return startBlock != 0 && block.number >= startBlock && block.number <= startBlock + duration;
+    }
 }

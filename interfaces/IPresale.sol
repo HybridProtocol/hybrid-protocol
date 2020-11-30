@@ -9,4 +9,5 @@ interface IPresale {
     function buy(uint _amountUSDC) external;
     function purchasedAmount(address _account) external view returns (uint);
     function totalSold() external view returns (uint);
+    function presaleIsActive() external view returns (bool);
 }

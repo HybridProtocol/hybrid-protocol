@@ -60,11 +60,11 @@ const config: HardhatUserConfig = {
     outDir: 'typechain',
     target: 'ethers-v5',
   },
-  // etherscan: {
-  //   // Your API key for Etherscan
-  //   // Obtain one at https://etherscan.io/
-  //   apiKey: etherscanKey,
-  // }
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: etherscanKey,
+  },
   // gasReporter: {
   //   enabled: COINMARKETCAP_API_KEY ? true : false,
   //   // coinmarketcap: COINMARKETCAP_API_KEY,

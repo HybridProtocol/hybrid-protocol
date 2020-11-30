@@ -1,8 +1,7 @@
 import { Signer } from 'ethers';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexStaking } from '../../typechain/IndexStaking';
-import { HybridTokenFactory } from '../../typechain/HybridTokenFactory';
-import { IndexStakingFactory } from '../../typechain/IndexStakingFactory';
+import { HybridToken__factory, IndexStaking__factory } from '../../typechain';
 import { expandTo18Decimals } from '../shared/utilities';
 
 export interface IndexStakingFixture {
@@ -32,21 +31,21 @@ const RewardTokenDeployParams = {
 };
 
 export async function indexStakingFixture([wallet]: Signer[]): Promise<IndexStakingFixture> {
-  const stakingToken = await new HybridTokenFactory(wallet).deploy(
+  const stakingToken = await new HybridToken__factory(wallet).deploy(
     StakingTokenDeployParams.name,
     StakingTokenDeployParams.symbol,
     await wallet.getAddress(),
     StakingTokenDeployParams.initialBalance,
     overrides,
   );
-  const rewardToken = await new HybridTokenFactory(wallet).deploy(
+  const rewardToken = await new HybridToken__factory(wallet).deploy(
     RewardTokenDeployParams.name,
     RewardTokenDeployParams.symbol,
     await wallet.getAddress(),
     RewardTokenDeployParams.initialBalance,
     overrides,
   );
-  const indexStaking = await new IndexStakingFactory(wallet).deploy(
+  const indexStaking = await new IndexStaking__factory(wallet).deploy(
     stakingToken.address,
     rewardToken.address,
     IndexStakingParams.duration,

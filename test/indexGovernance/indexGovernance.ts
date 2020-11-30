@@ -1,12 +1,11 @@
 import hre from 'hardhat';
 import { expect } from 'chai';
-import { Wallet } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 import { IndexHybridToken } from '../../typechain/IndexHybridToken';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexGovernance } from '../../typechain/IndexGovernance';
 import { indexGovernanceFixture, indexGovernanceMinDuration } from './indexGovernanceFixtures';
 import { convertStringToArrayish, expandTo18Decimals, mineBlocks } from '../shared/utilities';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 
 const ERRORS = {
   INVALID_LENGTH: 'IndexGovernance: INVALID_LENGTH',
@@ -28,6 +27,10 @@ describe('IndexGovernance', () => {
   let stakingToken: HybridToken;
   let indexGovernance: IndexGovernance;
   let indexGovernanceEmptyProposal: any;
+  let ownerWallet: SignerWithAddress;
+  let aliceWallet: SignerWithAddress;
+  let bobWallet: SignerWithAddress;
+  let otherWallet1: SignerWithAddress;
 
   const assetArrayishValues = {
     BTC: convertStringToArrayish('BTC'),
@@ -103,10 +106,10 @@ describe('IndexGovernance', () => {
   };
 
   beforeEach(async () => {
-    const signers = await hre.ethers.getSigners();
-    const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = signers;
+    [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
+
     // load fixture
-    const fixture = await indexGovernanceFixture(signers);
+    const fixture = await indexGovernanceFixture([ownerWallet]);
 
     // update contract variables
     indexHybridToken = fixture.indexHybridToken;
@@ -137,7 +140,6 @@ describe('IndexGovernance', () => {
 
   describe('createProposal', () => {
     it('fail - not maintainer', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -160,7 +162,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - invalid assets name', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.invalidAssetName;
 
@@ -189,7 +190,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - assets and weights has different length (IndexGovernance: INVALID_LENGTH)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.invalidAssetsWeightsLength;
 
@@ -212,7 +212,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - shorter duration (IndexGovernance: DURATION_INVALID)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.shorterDuration;
 
@@ -235,7 +234,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - longer duration (IndexGovernance: DURATION_INVALID)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.longerDuration;
 
@@ -258,7 +256,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - invalid total weights (IndexGovernance: TOTAL_WEIGHTS)', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.invalidWeights;
 
@@ -281,7 +278,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - cannot create second proposal before completing the first (IndexGovernance: VOTING_IN_PROGRESS)', async () => {
-      const [ownerWallet, aliceWallet, bobWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -331,7 +327,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success - create one proposal', async () => {
-      const [ownerWallet, aliceWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -366,7 +361,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success - create second proposal after completing the first', async () => {
-      const [ownerWallet, aliceWallet, bobWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -421,7 +415,6 @@ describe('IndexGovernance', () => {
 
   describe('vote', () => {
     it('fail - proposal has already ended (IndexGovernance: VOTING_NOT_IN_PROGRESS)', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -453,7 +446,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - invalid transferFromERC20 - not enough allowance, enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -490,7 +482,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - invalid transferFromERC20 - enough allowance, not enough balance (SafeTransfer: TRANSFER_FROM)', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -530,7 +521,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -607,7 +597,6 @@ describe('IndexGovernance', () => {
 
   describe('finalize', () => {
     it('fail - proposal not completed (IndexGovernance: VOTING_IN_PROGRESS)', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -641,7 +630,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success - finalize empty proposal', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
       expect(beforeProposal).to.be.eql(indexGovernanceEmptyProposal);
@@ -655,7 +643,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success - proposal.pros <= proposal.cons', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -710,7 +697,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success - proposal.pros > proposal.cons', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -770,7 +756,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success - get correct proposal id after several finalizes', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -817,7 +802,6 @@ describe('IndexGovernance', () => {
 
   describe('claimFunds', () => {
     it('fail - proposal not completed (IndexGovernance: VOTING_IN_PROGRESS)', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -860,7 +844,6 @@ describe('IndexGovernance', () => {
     });
 
     it('fail - could not claim funds more than staking', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -924,7 +907,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success - claim funds > 0', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -985,7 +967,6 @@ describe('IndexGovernance', () => {
     });
 
     it('success - claim funds - 0', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get and check beforeProposal
       const beforeProposal = await indexGovernance.proposal();
       expect(beforeProposal).to.be.eql(indexGovernanceEmptyProposal);
@@ -1029,7 +1010,6 @@ describe('IndexGovernance', () => {
 
   describe('votesOfUserByProposalId', () => {
     it('success', async () => {
-      const [ownerWallet, aliceWallet, bobWallet, otherWallet1] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
@@ -1069,7 +1049,6 @@ describe('IndexGovernance', () => {
 
   describe('proposal', () => {
     it('success', async () => {
-      const [ownerWallet, aliceWallet, bobWallet] = await hre.ethers.getSigners();
       // get voteAssets
       const voteAssets = voteProposalAssets.base;
 
