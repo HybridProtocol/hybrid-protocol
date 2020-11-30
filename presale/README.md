@@ -186,8 +186,8 @@ const permissions = {
 For pool params you need to get already deployed test USDC and HBT tokens and determine additional values
 
 ```javascript
-const WETH = '0x00'
-const XYZ = '0x00'
+const WETH = '0x0000000000000000000000000000000000000000'
+const XYZ = '0x0000000000000000000000000000000000000000'
 
 const startWeights = [toWei('36'), toWei('4')];
 const startBalances = [toWei('9000000'), toWei('1000000')];
@@ -208,7 +208,7 @@ const poolParams = {
 In addition need to know Balancer Factory address
 
 ```javascript
-const BFactoryAddress = '0x00'
+const BFactoryAddress = '0x0000000000000000000000000000000000000000'
 ```
 Finally CRP could be created
 ```javascript
