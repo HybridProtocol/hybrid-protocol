@@ -7,15 +7,13 @@ async function main() {
   const aliceWallet = '0x76Fd4B48af98436A26Bf649703cE7A2620F4dEEa';
   const hbtTotalSupply = 100000000;
   const presaleDuration = 10000;
+  const stakingDuration = 13000;
   const [deployer] = await ethers.getSigners();
   const assetArrayishValues = {
     BTC: convertStringToArrayish('BTC'),
     ETH: convertStringToArrayish('ETH'),
     BCH: convertStringToArrayish('BCH'),
     BNB: convertStringToArrayish('BNB'),
-    LTC: convertStringToArrayish('LTC'),
-    EOS: convertStringToArrayish('EOS'),
-    DASH: convertStringToArrayish('DASH'),
   };
 
   const voteProposalAssets = {
@@ -24,15 +22,7 @@ async function main() {
       weights: [5500, 2500, 2000],
     },
     base: {
-      assets: [
-        assetArrayishValues.BTC,
-        assetArrayishValues.ETH,
-        assetArrayishValues.BCH,
-        assetArrayishValues.BNB,
-        assetArrayishValues.LTC,
-        assetArrayishValues.EOS,
-        assetArrayishValues.DASH,
-      ],
+      assets: [assetArrayishValues.BTC, assetArrayishValues.ETH, assetArrayishValues.BCH, assetArrayishValues.BNB],
       duration: 7,
       weights: [3500, 2000, 1000, 300, 700, 1700, 800],
       title: 'base title',
@@ -59,24 +49,25 @@ async function main() {
   await usdc.deployed();
   usdcAddress = usdc.address;
   console.log('USDC deployed to:', usdcAddress);
-  await usdc.mint(aliceWallet, BigNumber.from('100000000000000000000000'));
+  tx = await usdc.mint(aliceWallet, BigNumber.from('100000000000000000000000'));
+  await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log((await usdc.balanceOf(aliceWallet)).toString(), ' USDC minted to:', aliceWallet);
 
-  const AlphaPresale = await hre.ethers.getContractFactory('TAlphaPresale');
+  const AlphaPresale = await hre.ethers.getContractFactory('AlphaPresale');
   const alphaPresale = await AlphaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await alphaPresale.deployed();
   console.log('Alpha Presale deployed to:', alphaPresale.address);
   await alphaPresale.start();
   console.log('Alpha Presale was started');
 
-  const BetaPresale = await hre.ethers.getContractFactory('TBetaPresale');
+  const BetaPresale = await hre.ethers.getContractFactory('BetaPresale');
   const betaPresale = await BetaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await betaPresale.deployed();
   console.log('Beta Presale deployed to:', betaPresale.address);
   await betaPresale.start();
   console.log('Beta Presale was started');
 
-  const GammaPresale = await hre.ethers.getContractFactory('TGammaPresale');
+  const GammaPresale = await hre.ethers.getContractFactory('GammaPresale');
   const gammaPresale = await GammaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await gammaPresale.deployed();
   console.log('Gamma Presale deployed to:', gammaPresale.address);
@@ -92,14 +83,16 @@ async function main() {
   const hybridToken = await HybridToken.deploy('Hybrid Token', 'HBT', await deployer.getAddress(), hbtTotalSupply);
   await hybridToken.deployed();
   console.log('Hybrid Token deployed to:', hybridToken.address);
-  await hybridToken.mint(aliceWallet, '100000000000000000000000');
+  tx = await hybridToken.mint(aliceWallet, '100000000000000000000000');
+  await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log((await hybridToken.balanceOf(aliceWallet)).toString(), ' HBT minted to:', aliceWallet);
 
   const IndexHybridToken = await hre.ethers.getContractFactory('TIndexHybridToken');
   const indexHybridToken = await IndexHybridToken.deploy('1000000000000000000000000', '1000000000000000000000000000');
   await indexHybridToken.deployed();
   console.log('Index Hybrid Token deployed to:', indexHybridToken.address);
-  await indexHybridToken.mint(aliceWallet, '100000000000000000000000');
+  tx = await indexHybridToken.mint(aliceWallet, '100000000000000000000000');
+  await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log((await indexHybridToken.balanceOf(aliceWallet)).toString(), ' xHBT minted to:', aliceWallet);
 
   await indexHybridToken.addAddressToMaintainers(deployer.address);
@@ -124,7 +117,7 @@ async function main() {
   const indexStaking = await IndexStaking.deploy(
     indexHybridToken.address,
     hybridToken.address,
-    13000,
+    stakingDuration,
     totalSupplyHBT,
     rewardSupply,
   );
