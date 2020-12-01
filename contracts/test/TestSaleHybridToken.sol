@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../SaleHybridToken.sol";
 
 
-contract TSaleHybridToken is SaleHybridToken {
+contract TestSaleHybridToken is SaleHybridToken {
 
     function mint(address _account, uint _amount) public {
         _mint(_account, _amount);

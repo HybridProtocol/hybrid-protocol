@@ -78,6 +78,10 @@ export function parseBigNumbers(property: string, value: string | undefined, dec
   return array.map((v, i) => parseBigNumber(`${property}[${i}]`, v, decimals));
 }
 
+export function formatEth(value: BigNumber): string {
+  return ethers.utils.formatUnits(value);
+}
+
 export async function mineBlock(provider: any): Promise<void> {
   await provider.send('evm_mine', []);
 }

@@ -5,7 +5,7 @@ pragma solidity >=0.6.6;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
-contract THybridToken is ERC20 {
+contract TestHybridToken is ERC20 {
     constructor(
         string memory _name,
         string memory _symbol,

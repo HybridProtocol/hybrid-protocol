@@ -11,7 +11,7 @@ import "../../libraries/SafeTransfer.sol";
 
 
 
-contract TVestingSwap is Ownable, ReentrancyGuard {
+contract TestVestingSwap is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
 
     address private alphaPresale;

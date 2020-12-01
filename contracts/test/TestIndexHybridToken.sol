@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../IndexHybridToken.sol";
 
 
-contract TIndexHybridToken is IndexHybridToken {
+contract TestIndexHybridToken is IndexHybridToken {
 
     constructor (
         uint256 _totalSupply,
