@@ -53,21 +53,35 @@ contract IndexStaking is ReentrancyGuard {
         deposit(deposited.sub(_amount));
     }
 
-    function withdraw() public returns (uint deposited, uint userReward) {
+    function withdraw() public returns (uint deposited, uint reward) {
+        uint currentTotalReward;
         deposited = stake[msg.sender];
-        uint reward = _calculateReward();
+        (reward, currentTotalReward) = _getRewards(msg.sender);
+        accumulatedReward += currentTotalReward;
         if (activeStakeDeposits != 0) {
-            staked = staked.add(reward.div(activeStakeDeposits));
+            staked = staked.add(currentTotalReward.div(activeStakeDeposits));
         }
-        userReward = deposited.mul(staked.sub(stakedSnapshot[msg.sender]));
         activeStakeDeposits = activeStakeDeposits.sub(deposited);
         stake[msg.sender] = 0;
         SafeTransfer.sendERC20(address(stakingToken), msg.sender, deposited);
-        SafeTransfer.sendERC20(address(rewardToken), msg.sender, userReward);
-        emit Withdrawn(msg.sender, deposited, userReward);
+        SafeTransfer.sendERC20(address(rewardToken), msg.sender, reward);
+        emit Withdrawn(msg.sender, deposited, reward);
     }
 
-    function _calculateReward() private returns (uint reward) {
+    function rewardOf(address _account) external view returns (uint reward) {
+        (reward, ) = _getRewards(_account);
+    }
+
+    function _getRewards(address _account) private view returns (uint userReward, uint currentTotalReward) {
+        uint stakedForCalculation;
+        currentTotalReward = _calculatecurrentTotalReward();
+        if (activeStakeDeposits != 0) {
+            stakedForCalculation = staked.add(currentTotalReward.div(activeStakeDeposits));
+        }
+        userReward = stake[msg.sender].mul(stakedForCalculation.sub(stakedSnapshot[_account]));
+    }
+
+    function _calculatecurrentTotalReward() private view returns (uint reward) {
         if (startBlock.add(duration) > block.number) {
             reward = rewardSupply
                 .mul(block.number)
@@ -77,6 +91,5 @@ contract IndexStaking is ReentrancyGuard {
             reward = rewardSupply;
         }
         reward -= accumulatedReward;
-        accumulatedReward += reward;
     }
 }
