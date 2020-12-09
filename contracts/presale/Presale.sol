@@ -37,6 +37,7 @@ contract Presale is Ownable, PresaleConstants, ReentrancyGuard {
 
     function start() external nonReentrant onlyOwner {
         require(startBlock == 0, "Presale: ALREADY_STARTED");
+        require(SHBT.balanceOf(address(this)) > 0, "Presale: SHBT_TOKENS_NOT_MINTED");
         startBlock = block.number;
     }
 

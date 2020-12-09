@@ -22,7 +22,7 @@ module.exports = {
     rinkeby: {
       provider: () =>
         new HDWalletProvider(
-          process.env.MNEMONIC_OR_PRIVATE_KEY,
+          process.env.PRIVATE_KEY,
           'https://rinkeby.infura.io/v3/' + process.env.INFURA_API_KEY,
         ),
       network_id: 4,
@@ -32,7 +32,7 @@ module.exports = {
     ropsten: {
       provider: () =>
         new HDWalletProvider(
-          process.env.MNEMONIC_OR_PRIVATE_KEY,
+          process.env.PRIVATE_KEY,
           'https://ropsten.infura.io/v3/' + process.env.INFURA_API_KEY,
         ),
       network_id: 3,

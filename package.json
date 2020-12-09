@@ -12,7 +12,7 @@
     "rebuild": "npm run clean && npm run build && npm run test",
     "lint": "eslint ./ --fix",
     "lint-quick": "pretty-quick --staged --pattern \"**/*.*(ts|tsx)\"",
-    "deploy": "npm run rebuild && npx hardhat run scripts/deploy.ts"
+    "deploy-testnet": "npm run rebuild && npx hardhat run scripts/deploy_testnet.ts"
   },
   "husky": {
     "hooks": {
