@@ -19,6 +19,7 @@ contract TestVestingSwap is Ownable, ReentrancyGuard {
     address private betaPresale;
     address private gammaPresale;
 
+    uint32 private constant SECONDS_PER_4_HOURS = 4 * 60 * 60;
     uint32 private constant SECONDS_PER_DAY = 24 * 60 * 60;
     uint32 private constant SECONDS_PER_MONTH = SECONDS_PER_DAY * 30;
 
@@ -95,9 +96,10 @@ contract TestVestingSwap is Ownable, ReentrancyGuard {
     }
 
     function availableAmountFor(address _presale, address _account) public view returns (uint available) {
+        uint monthDuration = SECONDS_PER_4_HOURS;
         uint percentagesUnlocked = 100;
         uint purchased = IPresale(_presale).purchasedAmount(_account);
-        uint monthsElapsed = now.sub(swap[_presale].start).div(SECONDS_PER_MONTH);
+        uint monthsElapsed = now.sub(swap[_presale].start).div(monthDuration);
         if (monthsElapsed < 6) {
             percentagesUnlocked = 0;
             for (uint8 i = 0; i <= monthsElapsed; i++) {

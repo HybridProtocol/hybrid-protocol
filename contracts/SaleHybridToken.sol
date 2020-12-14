@@ -59,7 +59,7 @@ contract SaleHybridToken is ERC20, Ownable, Maintenance, PresaleConstants, Reent
     function burnForPresale(
         address _presale,
         uint _amount
-    ) external nonReentrant onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
+    ) external onlyMaintainers nonReentrant onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
         require(!isBurnedFor[_presale], "SaleHybridToken: ONLY_ONCE_BURN");
         _burn(_presale, _amount);
         isBurnedFor[_presale] = true;

@@ -51,7 +51,7 @@ async function main() {
     BigNumber.from(commonMintedAmount).mul(100),
   );
   await usdc.deployed();
-  let usdcAddress = usdc.address;
+  const usdcAddress = usdc.address;
   console.log('USDC deployed to:', usdcAddress);
   tx = await usdc.mint(aliceWallet, BigNumber.from(commonMintedAmount));
   await hre.ethers.provider.waitForTransaction(tx.hash);
