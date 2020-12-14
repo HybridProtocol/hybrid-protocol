@@ -41,10 +41,10 @@ contract Presale is Ownable, PresaleConstants, ReentrancyGuard {
         startBlock = block.number;
     }
 
-    function burn() external nonReentrant onlyOwner {
+    function burnRest() external nonReentrant onlyOwner {
         require(block.number > startBlock + duration, "Presale: INVALID_DATE");
         uint unreleasedAmount = SHBT.balanceOf(address(this));
-        SHBT.burnFor(address(this), unreleasedAmount);
+        SHBT.burnForPresale(address(this), unreleasedAmount);
     }
 
     function sendUSDC(address _to, uint _amount) nonReentrant external onlyOwner {

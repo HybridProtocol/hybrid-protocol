@@ -23,6 +23,7 @@ contract VestingSwap is Ownable, ReentrancyGuard {
     uint32 private constant SECONDS_PER_MONTH = SECONDS_PER_DAY * 30;
 
     address private HBT;
+    address private sHBT;
 
     struct SwapInfo {
         uint sold;
@@ -44,8 +45,9 @@ contract VestingSwap is Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor(address _alphaPresale, address _betaPresale, address _gammaPresale, address _HBT) public {
+    constructor(address _alphaPresale, address _betaPresale, address _gammaPresale, address _HBT, address _sHBT) public {
         HBT = _HBT;
+        sHBT = _sHBT;
         alphaPresale = _alphaPresale;
         betaPresale = _betaPresale;
         gammaPresale = _gammaPresale;
@@ -55,27 +57,29 @@ contract VestingSwap is Ownable, ReentrancyGuard {
     }
 
     function startAlphaSwap() external onlyOwner nonReentrant {
-        swap[alphaPresale].sold = IPresale(_presale).totalSold();
+        swap[alphaPresale].sold = IPresale(alphaPresale).totalSold();
         require(IERC20(HBT).balanceOf(address(this)) == swap[alphaPresale].sold, "VestingSwap: HBT_NOT_ALLOCATED_FOR_ALPHA");
         swap[alphaPresale].start = now;
-        emit AlphaSwapInitialized(now, percentages);
+        emit AlphaSwapInitialized(now, swap[alphaPresale].vesting);
     }
 
     function startBetaSwap() external onlyOwner nonReentrant {
         uint leftAmount = swap[alphaPresale].sold.sub(swap[alphaPresale].swapped);
         swap[betaPresale].sold = IPresale(betaPresale).totalSold();
-        require(IERC20(HBT).balanceOf(address(this)) == swap[betaPresale].sold.add(leftAmount), "VestingSwap: HBT_NOT_ALLOCATED_FOR_BETA");
+        uint requiredBalance = swap[betaPresale].sold.add(leftAmount);
+        require(IERC20(HBT).balanceOf(address(this)) == requiredBalance, "VestingSwap: HBT_NOT_ALLOCATED_FOR_BETA");
         swap[betaPresale].start = now;
-        emit BetaSwapInitialized(now, percentages);
+        emit BetaSwapInitialized(now, swap[betaPresale].vesting);
     }
 
     function startGammaSwap() external onlyOwner nonReentrant {
         uint leftAlphaAmount = swap[alphaPresale].sold.sub(swap[alphaPresale].swapped);
         uint leftBetaAmount = swap[betaPresale].sold.sub(swap[betaPresale].swapped);
         swap[gammaPresale].sold = IPresale(gammaPresale).totalSold();
-        require(IERC20(HBT).balanceOf(address(this)) == swap[gammaPresale].sold.add(leftAmount), "VestingSwap: HBT_NOT_ALLOCATED_FOR_GAMMA");
+        uint requiredBalance = swap[gammaPresale].sold.add(leftAlphaAmount).add(leftBetaAmount);
+        require(IERC20(HBT).balanceOf(address(this)) == requiredBalance, "VestingSwap: HBT_NOT_ALLOCATED_FOR_GAMMA");
         swap[gammaPresale].start = now;
-        emit GammaSwapInitialized(now, percentages);
+        emit GammaSwapInitialized(now, swap[gammaPresale].vesting);
     }
 
     function alphaSwap(uint _amount) external nonReentrant isStarted(alphaPresale) {
@@ -104,12 +108,12 @@ contract VestingSwap is Ownable, ReentrancyGuard {
     }
 
     function _swap(address _presale, address _account, uint _amount) private {
-        uint availableAmount = availableAmountFor(_presale, msg.sender);
+        uint availableAmount = availableAmountFor(_presale, _account);
         require(_amount <= availableAmount, "VestingSwap: VESTING_LIMIT");
-        ISaleHybridToken(_presale).burnFor(msg.sender, _amount);
-        SafeTransfer.sendERC20(address(HBT), msg.sender, _amount);
-        swappedAmountOf[msg.sender] = swappedAmountOf[msg.sender].add(_amount);
-        emit Swap(msg.sender, _amount);
+        ISaleHybridToken(sHBT).burn(_account, _amount);
+        SafeTransfer.sendERC20(address(HBT), _account, _amount);
+        swap[_presale].swapped = swap[_presale].swapped.add(_amount);
+        swappedAmountOf[_account] = swappedAmountOf[_account].add(_amount);
+        emit Swap(_account, _amount);
     }
 }
-
