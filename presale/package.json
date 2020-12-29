@@ -12,7 +12,8 @@
         "coverage": "yarn solidity-coverage",
         "lint": "eslint .",
         "lint:contracts": "solhint contracts/**/*.sol",
-        "lint:libraries": "solhint libraries/*.sol"
+        "lint:libraries": "solhint libraries/*.sol",
+        "deploy": "truffle deploy --network ropsten"
     },
     "repository": {
         "type": "git",

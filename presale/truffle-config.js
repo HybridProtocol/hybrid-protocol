@@ -21,20 +21,14 @@ module.exports = {
     },
     rinkeby: {
       provider: () =>
-        new HDWalletProvider(
-          process.env.MNEMONIC_OR_PRIVATE_KEY,
-          'https://rinkeby.infura.io/v3/' + process.env.INFURA_API_KEY,
-        ),
+        new HDWalletProvider(process.env.PRIVATE_KEY, 'https://rinkeby.infura.io/v3/' + process.env.INFURA_API_KEY),
       network_id: 4,
       gas: 7989018,
       gasPrice: 200000000000,
     },
     ropsten: {
       provider: () =>
-        new HDWalletProvider(
-          process.env.MNEMONIC_OR_PRIVATE_KEY,
-          'https://ropsten.infura.io/v3/' + process.env.INFURA_API_KEY,
-        ),
+        new HDWalletProvider(process.env.PRIVATE_KEY, 'https://ropsten.infura.io/v3/' + process.env.INFURA_API_KEY),
       network_id: 3,
       gas: 7989018,
       gasPrice: 80000000000,

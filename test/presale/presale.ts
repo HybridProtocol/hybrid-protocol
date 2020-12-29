@@ -517,40 +517,6 @@ async function testPresaleContracts(
     });
   });
 
-  describe('burn', () => {
-    beforeEach(async () => {
-      // start presale
-      await presaleContract.connect(ownerWallet).start();
-
-      // mine blocks
-      await mineBlocks(hre.ethers.provider, presaleDuration);
-    });
-
-    it('fail - not owner', async () => {
-      // check contract owner - not owner
-      await checkAddressContractOwner(aliceWallet.address, presaleContract, false);
-
-      // run method burn() - reverted
-      await expect(presaleContract.connect(aliceWallet).burn()).to.be.revertedWith(ERRORS.IS_NOT_OWNER);
-    });
-
-    it('success - owner', async () => {
-      // get presaleContract sHBT balance
-      const beforePresaleContractBalanceSHBT = await sHBT.balanceOf(presaleContract.address);
-      expect(beforePresaleContractBalanceSHBT).to.be.gt(0);
-
-      // check contract owner - owner
-      await checkAddressContractOwner(ownerWallet.address, presaleContract, true);
-
-      // run method burn() - successfully
-      await expect(presaleContract.connect(ownerWallet).burn()).not.to.be.reverted;
-
-      // get and check presaleContract sHBT balance
-      const afterPresaleContractBalanceSHBT = await sHBT.balanceOf(presaleContract.address);
-      expect(afterPresaleContractBalanceSHBT).to.be.eq(0);
-    });
-  });
-
   describe('presaleIsActive', () => {
     it('success', async () => {
       let presaleIsActive: boolean;

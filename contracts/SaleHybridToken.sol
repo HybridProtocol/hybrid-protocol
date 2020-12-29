@@ -8,7 +8,6 @@ import "../interfaces/IPresale.sol";
 import "./presale/PresaleConstants.sol";
 import "../utils/Maintenance.sol";
 
-
 contract SaleHybridToken is ERC20, Ownable, Maintenance, PresaleConstants, ReentrancyGuard {
 
     string internal constant NAME = "Sale Hybrid Token";
@@ -57,13 +56,17 @@ contract SaleHybridToken is ERC20, Ownable, Maintenance, PresaleConstants, Reent
         _mint(_gammaPresale, GAMMA_PRESALE_LIMIT);
     }
 
-    function burnFor(
+    function burnForPresale(
         address _presale,
         uint _amount
     ) external onlyMaintainers nonReentrant onlyFor(_presale) onlyAvailableAmount(_presale, _amount) {
         require(!isBurnedFor[_presale], "SaleHybridToken: ONLY_ONCE_BURN");
         _burn(_presale, _amount);
         isBurnedFor[_presale] = true;
+    }
+
+    function burn(address _account, uint _amount) external onlyMaintainers nonReentrant {
+        _burn(_account, _amount);
     }
 
     function activePresaleAddress() external view returns (address) {

@@ -8,7 +8,7 @@ async function main() {
   const commonMintedAmount = '100000000000000000000000';
   const hbtTotalSupply = 100000000;
   const presaleDuration = 10000;
-  const stakingDuration = 13000;
+  const stakingDuration = 33000;
   const [deployer] = await ethers.getSigners();
   const assetArrayishValues = {
     BTC: convertStringToArrayish('BTC'),
@@ -39,7 +39,8 @@ async function main() {
   const saleHybridToken = await SaleHybridToken.deploy();
   await saleHybridToken.deployed();
   console.log('Sale Hybrid Token deployed to:', saleHybridToken.address);
-  await saleHybridToken.connect(deployer).mint(aliceWallet, BigNumber.from(commonMintedAmount));
+  tx = await saleHybridToken.connect(deployer).mint(aliceWallet, BigNumber.from(commonMintedAmount));
+  await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await saleHybridToken.balanceOf(aliceWallet)), 'sHBT minted to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
   const USDC = await hre.ethers.getContractFactory('TestHybridToken');
@@ -50,7 +51,7 @@ async function main() {
     BigNumber.from(commonMintedAmount).mul(100),
   );
   await usdc.deployed();
-  let usdcAddress = usdc.address;
+  const usdcAddress = usdc.address;
   console.log('USDC deployed to:', usdcAddress);
   tx = await usdc.mint(aliceWallet, BigNumber.from(commonMintedAmount));
   await hre.ethers.provider.waitForTransaction(tx.hash);
@@ -108,10 +109,9 @@ async function main() {
   );
   await vestingSwap.deployed();
   console.log('Vesting Swap deployed to:', vestingSwap.address);
-  await vestingSwap.startAlphaSwap();
-  await vestingSwap.startBetaSwap();
-  await vestingSwap.startGammaSwap();
-  console.log('All Vesting Swap was started');
+  tx = await vestingSwap.connect(deployer).transferOwnership(aliceWallet);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  console.log('Ownership was transferred to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
   const rewardSupply = BigNumber.from(48).mul(totalSupplyHBT).div(100);
   const IndexStaking = await hre.ethers.getContractFactory('IndexStaking');
