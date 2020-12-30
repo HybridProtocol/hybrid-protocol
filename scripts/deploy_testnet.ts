@@ -69,8 +69,11 @@ async function main() {
   const gammaPresale = await GammaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await gammaPresale.deployed();
   console.log('Gamma Presale deployed to:', gammaPresale.address);
-  await saleHybridToken.mintPresale(alphaPresale.address, betaPresale.address, gammaPresale.address);
+  tx = await saleHybridToken.mintPresale(alphaPresale.address, betaPresale.address, gammaPresale.address);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log('sHBT tokens were minted to presale contracts');
+  await saleHybridToken.addAddressesToMaintainers([alphaPresale.address, betaPresale.address, gammaPresale.address]);
+  console.log('Presales have been added to maintainers of sHBT contract');
   await alphaPresale.start();
   console.log('Alpha Presale was started');
   await betaPresale.start();
@@ -106,12 +109,21 @@ async function main() {
     betaPresale.address,
     gammaPresale.address,
     hybridToken.address,
+    saleHybridToken.address,
   );
   await vestingSwap.deployed();
   console.log('Vesting Swap deployed to:', vestingSwap.address);
   tx = await vestingSwap.connect(deployer).transferOwnership(aliceWallet);
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log('Ownership was transferred to:', aliceWallet);
+  await saleHybridToken.addAddressToMaintainers(vestingSwap.address);
+  console.log('Vesting Swap has been added to maintainers of sHBT contract');
+  tx = await hybridToken.addAddressToMaintainers(deployer.address);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  console.log('Deployer was added to Hybrid token maintainers');
+  tx = await hybridToken.mintForSwap(vestingSwap.address);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  console.log('HBT tokens were minted to Vesting Swap contract');
   console.log('---------------------------------------------------------------------------');
   const rewardSupply = BigNumber.from(48).mul(totalSupplyHBT).div(100);
   const IndexStaking = await hre.ethers.getContractFactory('IndexStaking');

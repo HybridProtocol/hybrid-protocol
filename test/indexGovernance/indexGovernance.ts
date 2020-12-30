@@ -117,14 +117,14 @@ describe('IndexGovernance', () => {
     indexGovernance = fixture.indexGovernance;
 
     // init test action
-    await indexHybridToken.addAddressesToMainteiners([aliceWallet.address, indexGovernance.address]); // add aliceWallet.address, indexGovernance.address to mainteiners
+    await indexHybridToken.addAddressesToMaintainers([aliceWallet.address, indexGovernance.address]); // add aliceWallet.address, indexGovernance.address to mainteiners
     await indexHybridToken
       .connect(aliceWallet)
       .updateComposition(voteProposalAssets.start.assets, voteProposalAssets.start.weights); // set start composition
     await stakingToken.transfer(aliceWallet.address, expandTo18Decimals(1000)); // transfer sToken tokens to Alice address
     await stakingToken.transfer(bobWallet.address, expandTo18Decimals(1000)); // transfer sToken tokens to Bob address
     await stakingToken.transfer(otherWallet1.address, expandTo18Decimals(1000)); // transfer sToken tokens to OtherWallet address
-    await indexGovernance.addAddressesToMainteiners([aliceWallet.address, bobWallet.address]); // add aliceWallet.address and bobWallet.address to mainteiners
+    await indexGovernance.addAddressesToMaintainers([aliceWallet.address, bobWallet.address]); // add aliceWallet.address and bobWallet.address to mainteiners
 
     // get and check indexGovernance empty proposal
     indexGovernanceEmptyProposal = await indexGovernance.proposal();

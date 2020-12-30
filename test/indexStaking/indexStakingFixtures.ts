@@ -1,7 +1,8 @@
 import { Signer } from 'ethers';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexStaking } from '../../typechain/IndexStaking';
-import { HybridToken__factory, IndexStaking__factory } from '../../typechain';
+import { HybridToken__factory } from '../../typechain/factories/HybridToken__factory';
+import { IndexStaking__factory } from '../../typechain/factories/IndexStaking__factory';
 import { expandTo18Decimals } from '../shared/utilities';
 
 export interface IndexStakingFixture {

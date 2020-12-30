@@ -3,7 +3,9 @@ import { expandTo18Decimals } from '../shared/utilities';
 import { IndexHybridToken } from '../../typechain/IndexHybridToken';
 import { IndexGovernance } from '../../typechain/IndexGovernance';
 import { HybridToken } from '../../typechain/HybridToken';
-import { HybridToken__factory, IndexGovernance__factory, IndexHybridToken__factory } from '../../typechain';
+import { HybridToken__factory } from '../../typechain/factories/HybridToken__factory';
+import { IndexGovernance__factory } from '../../typechain/factories/IndexGovernance__factory';
+import { IndexHybridToken__factory } from '../../typechain/factories/IndexHybridToken__factory';
 
 export interface IndexGovernanceFixture {
   indexHybridToken: IndexHybridToken;

@@ -3,13 +3,11 @@ import { SaleHybridToken } from '../../typechain/SaleHybridToken';
 import { AlphaPresale } from '../../typechain/AlphaPresale';
 import { BetaPresale } from '../../typechain/BetaPresale';
 import { GammaPresale } from '../../typechain/GammaPresale';
-import {
-  AlphaPresale__factory,
-  BetaPresale__factory,
-  GammaPresale__factory,
-  HybridToken__factory,
-  SaleHybridToken__factory,
-} from '../../typechain';
+import { AlphaPresale__factory } from '../../typechain/factories/AlphaPresale__factory';
+import { BetaPresale__factory } from '../../typechain/factories/BetaPresale__factory';
+import { GammaPresale__factory } from '../../typechain/factories/GammaPresale__factory';
+import { HybridToken__factory } from '../../typechain/factories/HybridToken__factory';
+import { SaleHybridToken__factory } from '../../typechain/factories/SaleHybridToken__factory';
 import { expandTo18Decimals } from '../shared/utilities';
 
 export interface PresaleFixture {

@@ -30,7 +30,7 @@ contract Maintenance is Ownable {
         }
     }
 
-    function addAddressesToMainteiners(address[] memory addrs) onlyOwner public returns(bool success) {
+    function addAddressesToMaintainers(address[] memory addrs) onlyOwner public returns(bool success) {
         for (uint256 i = 0; i < addrs.length; i++) {
             if (addAddressToMaintainers(addrs[i])) {
                 success = true;

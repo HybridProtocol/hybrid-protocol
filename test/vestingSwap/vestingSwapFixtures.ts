@@ -1,6 +1,12 @@
 import { Signer } from 'ethers';
-import { HybridToken, VestingSwap, AlphaPresale, BetaPresale, GammaPresale, SaleHybridToken } from '../../typechain';
-import { HybridToken__factory, VestingSwap__factory } from '../../typechain';
+import { HybridToken } from '../../typechain/HybridToken';
+import { VestingSwap } from '../../typechain/VestingSwap';
+import { AlphaPresale } from '../../typechain/AlphaPresale';
+import { BetaPresale } from '../../typechain/BetaPresale';
+import { GammaPresale } from '../../typechain/GammaPresale';
+import { SaleHybridToken } from '../../typechain/SaleHybridToken';
+import { HybridToken__factory } from '../../typechain/factories/HybridToken__factory';
+import { VestingSwap__factory } from '../../typechain/factories/VestingSwap__factory';
 import { expandTo18Decimals } from '../shared/utilities';
 
 export interface VestingSwapFixture {

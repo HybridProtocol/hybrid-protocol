@@ -9,10 +9,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/ISaleHybridToken.sol";
 import "../interfaces/IPresale.sol";
 import "../libraries/SafeTransfer.sol";
+import "./presale/PresaleConstants.sol";
 
 
 
-contract VestingSwap is Ownable, ReentrancyGuard {
+contract VestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
     using SafeMath for uint256;
 
     address private alphaPresale;
@@ -26,7 +27,6 @@ contract VestingSwap is Ownable, ReentrancyGuard {
     address private sHBT;
 
     struct SwapInfo {
-        uint sold;
         uint start;
         uint swapped;
         uint8[7] vesting;
@@ -57,27 +57,18 @@ contract VestingSwap is Ownable, ReentrancyGuard {
     }
 
     function startAlphaSwap() external onlyOwner nonReentrant {
-        swap[alphaPresale].sold = IPresale(alphaPresale).totalSold();
-        require(IERC20(HBT).balanceOf(address(this)) == swap[alphaPresale].sold, "VestingSwap: HBT_NOT_ALLOCATED_FOR_ALPHA");
+        uint requiredBalance = ALPHA_PRESALE_LIMIT.add(BETA_PRESALE_LIMIT).add(GAMMA_PRESALE_LIMIT); 
+        require(IERC20(HBT).balanceOf(address(this)) == requiredBalance, "VestingSwap: HBT_NOT_ALLOCATED_FOR_ALL_SWAPS");
         swap[alphaPresale].start = now;
         emit AlphaSwapInitialized(now, swap[alphaPresale].vesting);
     }
 
     function startBetaSwap() external onlyOwner nonReentrant {
-        uint leftAmount = swap[alphaPresale].sold.sub(swap[alphaPresale].swapped);
-        swap[betaPresale].sold = IPresale(betaPresale).totalSold();
-        uint requiredBalance = swap[betaPresale].sold.add(leftAmount);
-        require(IERC20(HBT).balanceOf(address(this)) == requiredBalance, "VestingSwap: HBT_NOT_ALLOCATED_FOR_BETA");
         swap[betaPresale].start = now;
         emit BetaSwapInitialized(now, swap[betaPresale].vesting);
     }
 
     function startGammaSwap() external onlyOwner nonReentrant {
-        uint leftAlphaAmount = swap[alphaPresale].sold.sub(swap[alphaPresale].swapped);
-        uint leftBetaAmount = swap[betaPresale].sold.sub(swap[betaPresale].swapped);
-        swap[gammaPresale].sold = IPresale(gammaPresale).totalSold();
-        uint requiredBalance = swap[gammaPresale].sold.add(leftAlphaAmount).add(leftBetaAmount);
-        require(IERC20(HBT).balanceOf(address(this)) == requiredBalance, "VestingSwap: HBT_NOT_ALLOCATED_FOR_GAMMA");
         swap[gammaPresale].start = now;
         emit GammaSwapInitialized(now, swap[gammaPresale].vesting);
     }
