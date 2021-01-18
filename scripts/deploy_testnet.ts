@@ -24,7 +24,7 @@ async function main() {
     },
     base: {
       assets: [assetArrayishValues.BTC, assetArrayishValues.ETH, assetArrayishValues.BCH, assetArrayishValues.BNB],
-      duration: 7,
+      duration: 57,
       weights: [3500, 2000, 1000, 3500],
       title: 'base title',
       description: 'base description',
