@@ -33,7 +33,7 @@ contract VestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
     }
 
     mapping(address => SwapInfo) public swap;
-    mapping(address => uint) public swappedAmountOf;
+    mapping(address => mapping(address => uint)) presaleSwappedAmountOf;
 
     event AlphaSwapInitialized(uint, uint8[7]);
     event BetaSwapInitialized(uint, uint8[7]);
@@ -95,7 +95,7 @@ contract VestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
                 percentagesUnlocked = percentagesUnlocked.add(swap[_presale].vesting[i]);
             }
         }
-        available = purchased.mul(percentagesUnlocked).div(100).sub(swappedAmountOf[_account]);
+        available = purchased.mul(percentagesUnlocked).div(100).sub(presaleSwappedAmountOf[_presale][_account]);
     }
 
     function _swap(address _presale, address _account, uint _amount) private {
@@ -104,7 +104,7 @@ contract VestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
         ISaleHybridToken(sHBT).burn(_account, _amount);
         SafeTransfer.sendERC20(address(HBT), _account, _amount);
         swap[_presale].swapped = swap[_presale].swapped.add(_amount);
-        swappedAmountOf[_account] = swappedAmountOf[_account].add(_amount);
+        presaleSwappedAmountOf[_presale][_account] = presaleSwappedAmountOf[_presale][_account].add(_amount);
         emit Swap(_account, _amount);
     }
 }

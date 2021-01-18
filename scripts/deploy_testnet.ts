@@ -103,7 +103,7 @@ async function main() {
   await indexHybridToken.addAddressToMaintainers(deployer.address);
   await indexHybridToken.addAddressToMaintainers(aliceWallet);
 
-  const VestingSwap = await hre.ethers.getContractFactory('TestVestingSwap');
+  const VestingSwap = await hre.ethers.getContractFactory('VestingSwap');
   const vestingSwap = await VestingSwap.deploy(
     alphaPresale.address,
     betaPresale.address,
@@ -138,7 +138,7 @@ async function main() {
   console.log('Index Staking deployed to:', indexStaking.address);
   console.log('---------------------------------------------------------------------------');
   const IndexGovernance = await hre.ethers.getContractFactory('IndexGovernance');
-  const indexGovernance = await IndexGovernance.deploy(indexHybridToken.address, hybridToken.address, 5);
+  const indexGovernance = await IndexGovernance.deploy(indexHybridToken.address, hybridToken.address, 50);
   await indexGovernance.deployed();
   console.log('Index Governance deployed to:', indexGovernance.address);
   await indexHybridToken.addAddressToMaintainers(indexGovernance.address);
