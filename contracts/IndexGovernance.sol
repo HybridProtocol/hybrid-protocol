@@ -92,6 +92,10 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
         emit Voted(msg.sender, _amount, _decision);
     }
 
+    function votesOfUserByProposalId(uint proposalId, address _voter) public view returns(uint) {
+        return votesOfUserByProposalId[_proposalId][msg.sender];
+    }
+
     function finalize() public nonReentrant {
         require(proposal.deadline < block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         if (proposal.pros > proposal.cons) {
@@ -112,12 +116,12 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
         delete proposal;
     }
 
-    function claimFunds(uint _amount, uint _proposalId) public nonReentrant {
+    function claimFunds(uint _proposalId) public nonReentrant {
         if (proposal.id == _proposalId) {
             require(proposal.deadline <= block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         }
-        votesOfUserByProposalId[_proposalId][msg.sender] = votesOfUserByProposalId[_proposalId][msg.sender].sub(_amount);
-        SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount);
+        votesOfUserByProposalId[_proposalId][msg.sender] = 0;
+        SafeTransfer.sendERC20(address(stakingToken), msg.sender, votesOfUserByProposalId[_proposalId][msg.sender]);
     }
 
 }

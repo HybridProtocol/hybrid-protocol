@@ -58,17 +58,18 @@ contract VestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
 
     function startAlphaSwap() external onlyOwner nonReentrant {
         uint requiredBalance = ALPHA_PRESALE_LIMIT.add(BETA_PRESALE_LIMIT).add(GAMMA_PRESALE_LIMIT); 
+        require(swap[alphaPresale].start == 0, "VestingSwap: Alpha already started");
         require(IERC20(HBT).balanceOf(address(this)) == requiredBalance, "VestingSwap: HBT_NOT_ALLOCATED_FOR_ALL_SWAPS");
         swap[alphaPresale].start = now;
         emit AlphaSwapInitialized(now, swap[alphaPresale].vesting);
     }
 
-    function startBetaSwap() external onlyOwner nonReentrant {
+    function startBetaSwap() external onlyOwner nonReentrant isStarted(alphaPresale) {
         swap[betaPresale].start = now;
         emit BetaSwapInitialized(now, swap[betaPresale].vesting);
     }
 
-    function startGammaSwap() external onlyOwner nonReentrant {
+    function startGammaSwap() external onlyOwner nonReentrant isStarted(betaPresale) {
         swap[gammaPresale].start = now;
         emit GammaSwapInitialized(now, swap[gammaPresale].vesting);
     }
