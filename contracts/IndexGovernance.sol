@@ -92,8 +92,8 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
         emit Voted(msg.sender, _amount, _decision);
     }
 
-    function votesOfUserByProposalId(uint proposalId, address _voter) public view returns(uint) {
-        return votesOfUserByProposalId[_proposalId][msg.sender];
+    function votesOfUserByProposal(uint proposalId, address _voter) public view returns(uint) {
+        return votesOfUserByProposalId[proposalId][_voter];
     }
 
     function finalize() public nonReentrant {
