@@ -35,7 +35,7 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
 
     Proposal public proposal;
 
-    event ProposalCreated(uint id, bytes8[] assets, uint16[] weights, uint votingDuration, address initiator, string title, string description, string link);
+    event ProposalCreated(uint id, bytes8[] assets, uint16[] weights, uint deadline, address initiator, string title, string description, string link);
     event Voted(address voter, uint amount, bool decision);
     event ProposalClosed(uint id, bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator, string title, string description, string link);
 
@@ -77,7 +77,7 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
             _description,
             _link
         );
-        emit ProposalCreated(proposal.id, _assets, _weights, _duration, msg.sender, _title, _description, _link);
+        emit ProposalCreated(proposal.id, _assets, _weights, block.number.add(_duration), msg.sender, _title, _description, _link);
     }
 
     function vote(uint _amount, bool _decision) public nonReentrant {
