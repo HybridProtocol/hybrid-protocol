@@ -120,8 +120,8 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
         if (proposal.id == _proposalId) {
             require(proposal.deadline <= block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         }
-        votesOfUserByProposalId[_proposalId][msg.sender] = 0;
         SafeTransfer.sendERC20(address(stakingToken), msg.sender, votesOfUserByProposalId[_proposalId][msg.sender]);
+        votesOfUserByProposalId[_proposalId][msg.sender] = 0;
     }
 
 }
