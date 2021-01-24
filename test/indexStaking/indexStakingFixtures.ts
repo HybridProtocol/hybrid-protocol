@@ -16,7 +16,7 @@ const overrides = {
   gasPrice: 1,
 };
 export const IndexStakingParams = {
-  duration: 40, // blocks
+  duration: 6500, // blocks
   totalSupply: expandTo18Decimals(100000000),
   rewardSupply: expandTo18Decimals((48 * 100000000) / 100),
 };

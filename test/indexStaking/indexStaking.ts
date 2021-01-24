@@ -15,6 +15,8 @@ const ERRORS = {
   INDEX_STAKING_INVALID_DATE: 'IndexStaking: INVALID_DATE',
 };
 
+const MULTIPLICATOR = '100000000000000000000';
+
 describe('IndexStaking', () => {
   let sToken: HybridToken;
   let rToken: HybridToken;
@@ -597,10 +599,6 @@ describe('IndexStaking', () => {
       let expectedStaked = await indexStaking.staked();
       expect(expectedStaked).to.be.eq(0);
 
-      // get and check expectedAccumulatedReward
-      let expectedAccumulatedReward = await indexStaking.accumulatedReward();
-      expect(expectedAccumulatedReward).to.be.eq(0);
-
       // mine some blocks
       await mineBlocks(hre.ethers.provider, 5);
 
@@ -627,22 +625,22 @@ describe('IndexStaking', () => {
         );
         expect(expectedUserRewardParams.userDeposit).to.be.eq(beforeStake);
         expect(expectedUserRewardParams.userReward).to.be.eq(
-          expectedUserRewardParams.userDeposit.mul(
-            expectedUserRewardParams.staked.sub(expectedUserRewardParams.userStakedSnapshot),
-          ),
+          expectedUserRewardParams.userDeposit
+            .mul(expectedUserRewardParams.staked.sub(expectedUserRewardParams.userStakedSnapshot))
+            .div(MULTIPLICATOR),
         );
         expect(expectedUserRewardParams.userStake).to.be.eq(0);
         expect(expectedUserRewardParams.userStakedSnapshot).to.be.eq(beforeStakedSnapshot);
-        expect(expectedUserRewardParams.reward).to.be.gte(0);
-        expect(expectedUserRewardParams.accumulatedReward).to.be.eq(
-          expectedAccumulatedReward.add(expectedUserRewardParams.reward),
-        );
+        expect(expectedUserRewardParams.totalReward).to.be.gte(0);
+
         expect(expectedUserRewardParams.activeStakeDeposits).to.be.eq(
           expectedActiveStakeDeposits.sub(expectedUserRewardParams.userDeposit),
         );
         expect(expectedUserRewardParams.staked).to.be.eq(
           !expectedActiveStakeDeposits.eq(0)
-            ? expectedStaked.add(expectedUserRewardParams.reward.div(expectedActiveStakeDeposits))
+            ? expectedStaked.add(
+                expectedUserRewardParams.totalReward.mul(MULTIPLICATOR).div(expectedActiveStakeDeposits),
+              )
             : expectedStaked,
         );
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
@@ -666,10 +664,6 @@ describe('IndexStaking', () => {
         const afterBalanceSToken = await sToken.balanceOf(walletData.wallet.address);
         expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.add(expectedUserRewardParams.userDeposit));
 
-        // get and check afterAccumulatedReward
-        const afterAccumulatedReward = await indexStaking.accumulatedReward();
-        expect(afterAccumulatedReward).to.be.eq(expectedUserRewardParams.accumulatedReward);
-
         // get and check afterActiveStakeDeposits
         afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
         expect(afterActiveStakeDeposits).to.be.eq(expectedUserRewardParams.activeStakeDeposits);
@@ -677,9 +671,6 @@ describe('IndexStaking', () => {
         // get and check afterStaked
         const afterStaked = await indexStaking.staked();
         expect(afterStaked).to.be.eq(expectedUserRewardParams.staked);
-
-        // update expectedAccumulatedReward
-        expectedAccumulatedReward = expectedUserRewardParams.accumulatedReward;
 
         // update expectedActiveStakeDeposits
         expectedActiveStakeDeposits = expectedUserRewardParams.activeStakeDeposits;
@@ -739,10 +730,6 @@ describe('IndexStaking', () => {
       let expectedStaked = await indexStaking.staked();
       expect(expectedStaked).to.be.eq(0);
 
-      // get and check expectedAccumulatedReward
-      let expectedAccumulatedReward = await indexStaking.accumulatedReward();
-      expect(expectedAccumulatedReward).to.be.eq(0);
-
       // mine some blocks
       await mineBlocks(hre.ethers.provider, IndexStakingParams.duration);
 
@@ -769,24 +756,25 @@ describe('IndexStaking', () => {
         );
         expect(expectedUserRewardParams.userDeposit).to.be.eq(beforeStake);
         expect(expectedUserRewardParams.userReward).to.be.eq(
-          expectedUserRewardParams.userDeposit.mul(
-            expectedUserRewardParams.staked.sub(expectedUserRewardParams.userStakedSnapshot),
-          ),
+          expectedUserRewardParams.userDeposit
+            .mul(expectedUserRewardParams.staked.sub(expectedUserRewardParams.userStakedSnapshot))
+            .div(MULTIPLICATOR),
         );
         expect(expectedUserRewardParams.userStake).to.be.eq(0);
         expect(expectedUserRewardParams.userStakedSnapshot).to.be.eq(beforeStakedSnapshot);
-        expect(expectedUserRewardParams.reward).to.be.gte(0);
-        expect(expectedUserRewardParams.accumulatedReward).to.be.eq(
-          expectedAccumulatedReward.add(expectedUserRewardParams.reward),
-        );
+        expect(expectedUserRewardParams.totalReward).to.be.gte(0);
+
         expect(expectedUserRewardParams.activeStakeDeposits).to.be.eq(
           expectedActiveStakeDeposits.sub(expectedUserRewardParams.userDeposit),
         );
         expect(expectedUserRewardParams.staked).to.be.eq(
           !expectedActiveStakeDeposits.eq(0)
-            ? expectedStaked.add(expectedUserRewardParams.reward.div(expectedActiveStakeDeposits))
+            ? expectedStaked.add(
+                expectedUserRewardParams.totalReward.mul(MULTIPLICATOR).div(expectedActiveStakeDeposits),
+              )
             : expectedStaked,
         );
+
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw() - successfully
@@ -808,10 +796,6 @@ describe('IndexStaking', () => {
         const afterBalanceSToken = await sToken.balanceOf(walletData.wallet.address);
         expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken.add(expectedUserRewardParams.userDeposit));
 
-        // get and check afterAccumulatedReward
-        const afterAccumulatedReward = await indexStaking.accumulatedReward();
-        expect(afterAccumulatedReward).to.be.eq(expectedUserRewardParams.accumulatedReward);
-
         // get and check afterActiveStakeDeposits
         afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
         expect(afterActiveStakeDeposits).to.be.eq(expectedUserRewardParams.activeStakeDeposits);
@@ -819,9 +803,6 @@ describe('IndexStaking', () => {
         // get and check afterStaked
         const afterStaked = await indexStaking.staked();
         expect(afterStaked).to.be.eq(expectedUserRewardParams.staked);
-
-        // update expectedAccumulatedReward
-        expectedAccumulatedReward = expectedUserRewardParams.accumulatedReward;
 
         // update expectedActiveStakeDeposits
         expectedActiveStakeDeposits = expectedUserRewardParams.activeStakeDeposits;
@@ -881,10 +862,6 @@ describe('IndexStaking', () => {
       let expectedStaked = await indexStaking.staked();
       expect(expectedStaked).to.be.eq(0);
 
-      // get and check expectedAccumulatedReward
-      let expectedAccumulatedReward = await indexStaking.accumulatedReward();
-      expect(expectedAccumulatedReward).to.be.eq(0);
-
       // mine some blocks
       await mineBlocks(hre.ethers.provider, 5);
 
@@ -916,22 +893,21 @@ describe('IndexStaking', () => {
         );
         expect(expectedUserRewardParams.userDeposit).to.be.eq(beforeStake);
         expect(expectedUserRewardParams.userReward).to.be.eq(
-          expectedUserRewardParams.userDeposit.mul(
-            expectedUserRewardParams.staked.sub(expectedUserRewardParams.userStakedSnapshot),
-          ),
+          expectedUserRewardParams.userDeposit
+            .mul(expectedUserRewardParams.staked.sub(expectedUserRewardParams.userStakedSnapshot))
+            .div(MULTIPLICATOR),
         );
         expect(expectedUserRewardParams.userStake).to.be.eq(0);
         expect(expectedUserRewardParams.userStakedSnapshot).to.be.eq(beforeStakedSnapshot);
-        expect(expectedUserRewardParams.reward).to.be.gte(0);
-        expect(expectedUserRewardParams.accumulatedReward).to.be.eq(
-          expectedAccumulatedReward.add(expectedUserRewardParams.reward),
-        );
+        expect(expectedUserRewardParams.totalReward).to.be.gte(0);
         expect(expectedUserRewardParams.activeStakeDeposits).to.be.eq(
           expectedActiveStakeDeposits.sub(expectedUserRewardParams.userDeposit),
         );
         expect(expectedUserRewardParams.staked).to.be.eq(
           !expectedActiveStakeDeposits.eq(0)
-            ? expectedStaked.add(expectedUserRewardParams.reward.div(expectedActiveStakeDeposits))
+            ? expectedStaked.add(
+                expectedUserRewardParams.totalReward.mul(MULTIPLICATOR).div(expectedActiveStakeDeposits),
+              )
             : expectedStaked,
         );
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
@@ -959,10 +935,6 @@ describe('IndexStaking', () => {
           beforeBalanceSToken.add(expectedUserRewardParams.userDeposit).sub(remainderStake),
         );
 
-        // get and check afterAccumulatedReward
-        const afterAccumulatedReward = await indexStaking.accumulatedReward();
-        expect(afterAccumulatedReward).to.be.eq(expectedUserRewardParams.accumulatedReward);
-
         // get and check afterActiveStakeDeposits
         afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
         expect(afterActiveStakeDeposits).to.be.eq(expectedUserRewardParams.activeStakeDeposits.add(remainderStake));
@@ -970,9 +942,6 @@ describe('IndexStaking', () => {
         // get and check afterStaked
         const afterStaked = await indexStaking.staked();
         expect(afterStaked).to.be.eq(expectedUserRewardParams.staked);
-
-        // update expectedAccumulatedReward
-        expectedAccumulatedReward = expectedUserRewardParams.accumulatedReward;
 
         // update expectedActiveStakeDeposits
         expectedActiveStakeDeposits = expectedUserRewardParams.activeStakeDeposits.add(remainderStake);
@@ -1032,10 +1001,6 @@ describe('IndexStaking', () => {
       let expectedStaked = await indexStaking.staked();
       expect(expectedStaked).to.be.eq(0);
 
-      // get and check expectedAccumulatedReward
-      let expectedAccumulatedReward = await indexStaking.accumulatedReward();
-      expect(expectedAccumulatedReward).to.be.eq(0);
-
       // mine some blocks
       await mineBlocks(hre.ethers.provider, 5);
 
@@ -1067,22 +1032,21 @@ describe('IndexStaking', () => {
         );
         expect(expectedUserRewardParams.userDeposit).to.be.eq(beforeStake);
         expect(expectedUserRewardParams.userReward).to.be.eq(
-          expectedUserRewardParams.userDeposit.mul(
-            expectedUserRewardParams.staked.sub(expectedUserRewardParams.userStakedSnapshot),
-          ),
+          expectedUserRewardParams.userDeposit
+            .mul(expectedUserRewardParams.staked.sub(expectedUserRewardParams.userStakedSnapshot))
+            .div(MULTIPLICATOR),
         );
         expect(expectedUserRewardParams.userStake).to.be.eq(0);
         expect(expectedUserRewardParams.userStakedSnapshot).to.be.eq(beforeStakedSnapshot);
-        expect(expectedUserRewardParams.reward).to.be.gte(0);
-        expect(expectedUserRewardParams.accumulatedReward).to.be.eq(
-          expectedAccumulatedReward.add(expectedUserRewardParams.reward),
-        );
+        expect(expectedUserRewardParams.totalReward).to.be.gte(0);
         expect(expectedUserRewardParams.activeStakeDeposits).to.be.eq(
           expectedActiveStakeDeposits.sub(expectedUserRewardParams.userDeposit),
         );
         expect(expectedUserRewardParams.staked).to.be.eq(
           !expectedActiveStakeDeposits.eq(0)
-            ? expectedStaked.add(expectedUserRewardParams.reward.div(expectedActiveStakeDeposits))
+            ? expectedStaked.add(
+                expectedUserRewardParams.totalReward.mul(MULTIPLICATOR).div(expectedActiveStakeDeposits),
+              )
             : expectedStaked,
         );
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
@@ -1110,10 +1074,6 @@ describe('IndexStaking', () => {
           beforeBalanceSToken.add(expectedUserRewardParams.userDeposit).sub(remainderStake),
         );
 
-        // get and check afterAccumulatedReward
-        const afterAccumulatedReward = await indexStaking.accumulatedReward();
-        expect(afterAccumulatedReward).to.be.eq(expectedUserRewardParams.accumulatedReward);
-
         // get and check afterActiveStakeDeposits
         afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
         expect(afterActiveStakeDeposits).to.be.eq(expectedUserRewardParams.activeStakeDeposits.add(remainderStake));
@@ -1121,9 +1081,6 @@ describe('IndexStaking', () => {
         // get and check afterStaked
         const afterStaked = await indexStaking.staked();
         expect(afterStaked).to.be.eq(expectedUserRewardParams.staked);
-
-        // update expectedAccumulatedReward
-        expectedAccumulatedReward = expectedUserRewardParams.accumulatedReward;
 
         // update expectedActiveStakeDeposits
         expectedActiveStakeDeposits = expectedUserRewardParams.activeStakeDeposits.add(remainderStake);
@@ -1162,7 +1119,7 @@ describe('IndexStaking', () => {
       expect(expectedUserRewardParams.userDeposit).to.be.eq(0);
 
       // run method withdraw(withdrawAmountSToken) - successfully
-      await expect(indexStaking.connect(aliceWallet)['withdraw()']()).not.to.be.reverted;
+      await expect(indexStaking.connect(aliceWallet)['withdraw()']()).to.be.reverted;
 
       // get and check afterStake
       const afterStake = await indexStaking.stake(aliceWallet.address);
@@ -1480,60 +1437,17 @@ describe('IndexStaking', () => {
       }
     });
   });
-
-  describe('accumulatedReward', () => {
-    it('success', async () => {
-      // set and check amountSToken
-      const amountSToken = expandTo18Decimals(10);
-      expect(amountSToken).to.be.gt(0);
-
-      // get beforeAccumulatedReward
-      const beforeAccumulatedReward = await indexStaking.accumulatedReward();
-      expect(beforeAccumulatedReward).to.be.eq(0);
-
-      // first deposit
-      {
-        // increase sToken allowance to indexStaking.address
-        await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
-
-        // run method deposit() - successfully
-        await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
-
-        // get and check afterAccumulatedReward
-        const afterAccumulatedReward = await indexStaking.accumulatedReward();
-        expect(afterAccumulatedReward).to.be.eq(beforeAccumulatedReward);
-      }
-
-      // second deposit
-      {
-        // increase sToken allowance to indexStaking.address
-        await sToken.connect(aliceWallet).increaseAllowance(indexStaking.address, amountSToken);
-
-        // get and check expectedUserRewardParams
-        const expectedUserRewardParams = await calculateExpectedUserRewardParams(
-          hre.ethers.provider,
-          indexStaking,
-          aliceWallet,
-        );
-
-        // run method deposit() - successfully
-        await expect(indexStaking.connect(aliceWallet).deposit(amountSToken)).not.to.be.reverted;
-
-        // get and check afterAccumulatedReward
-        const afterAccumulatedReward = await indexStaking.accumulatedReward();
-        expect(afterAccumulatedReward).to.be.eq(expectedUserRewardParams.accumulatedReward);
-        expect(afterAccumulatedReward).to.be.gt(beforeAccumulatedReward);
-      }
-    });
-  });
 });
 
-export interface CalculateCurrentReward {
-  reward: BigNumber;
-  accumulatedReward: BigNumber;
+export interface CirculatedSupply {
+  supply: BigNumber;
 }
 
-export interface ExpectedUserRewardParams extends CalculateCurrentReward {
+export interface CalculateTotalReward {
+  totalReward: BigNumber;
+}
+
+export interface ExpectedUserRewardParams extends CalculateTotalReward {
   staked: BigNumber;
   activeStakeDeposits: BigNumber;
   userDeposit: BigNumber;
@@ -1548,19 +1462,22 @@ async function calculateExpectedUserRewardParams(
   wallet: Signer,
 ): Promise<ExpectedUserRewardParams> {
   const userDeposit = await indexStaking.stake(await wallet.getAddress());
-  const { reward, accumulatedReward } = await calculateExpectedCurrentReward(provider, indexStaking);
+  const { totalReward } = await calculateExpectedTotalReward(wallet, provider, indexStaking);
   let activeStakeDeposits = await indexStaking.activeStakeDeposits();
+
   let staked = await indexStaking.staked();
   if (!activeStakeDeposits.eq(0)) {
-    staked = staked.add(reward.div(activeStakeDeposits));
+    // console.log("totalReward: ",totalReward.toString());
+    // console.log("activeStakeDeposits: ",activeStakeDeposits.toString());
+    staked = staked.add(totalReward.mul(MULTIPLICATOR).div(activeStakeDeposits));
+    // console.log("staked: ", staked.toString());
   }
   const userStakedSnapshot = await indexStaking.stakedSnapshot(await wallet.getAddress());
-  const userReward = userDeposit.mul(staked.sub(userStakedSnapshot));
+  const userReward = userDeposit.mul(staked.sub(userStakedSnapshot)).div(MULTIPLICATOR);
   activeStakeDeposits = activeStakeDeposits.sub(userDeposit);
   const userStake = BigNumber.from(0);
   return {
-    reward,
-    accumulatedReward,
+    totalReward,
     staked,
     activeStakeDeposits,
     userDeposit,
@@ -1570,25 +1487,42 @@ async function calculateExpectedUserRewardParams(
   };
 }
 
-async function calculateExpectedCurrentReward(
+async function calculateExpectedTotalReward(
+  wallet: Signer,
   provider: any,
   indexStaking: IndexStaking,
-): Promise<CalculateCurrentReward> {
-  let reward: BigNumber;
+): Promise<CalculateTotalReward> {
+  let totalReward: BigNumber;
+  let initCirculatingSupply: BigNumber;
+  let currentCirculatingSupply: BigNumber;
+  const userStartBlock = await indexStaking.userStartBlock(await wallet.getAddress());
+  const blockNumber = BigNumber.from(await provider.getBlockNumber()).add(1);
+  initCirculatingSupply = (await calculatedCirculatedSupply(userStartBlock, provider, indexStaking)).supply;
+  currentCirculatingSupply = (await calculatedCirculatedSupply(blockNumber, provider, indexStaking)).supply;
+  totalReward = currentCirculatingSupply.sub(initCirculatingSupply);
+  return {
+    totalReward,
+  };
+}
+
+async function calculatedCirculatedSupply(
+  block: BigNumber,
+  provider: any,
+  indexStaking: IndexStaking,
+): Promise<CirculatedSupply> {
+  let supply: BigNumber;
   const startBlock = await indexStaking.startBlock();
   const duration = await indexStaking.duration();
   const rewardSupply = await indexStaking.rewardSupply();
-  let accumulatedReward = await indexStaking.accumulatedReward();
-  const blockNumber = BigNumber.from(await provider.getBlockNumber()).add(1); // get number of next block
-  if (startBlock.add(duration).gt(blockNumber)) {
-    reward = rewardSupply.mul(blockNumber).mul(blockNumber.sub(startBlock)).div(startBlock.add(duration).mul(duration));
+  const blockNumber = BigNumber.from(await provider.getBlockNumber()).add(1);
+  if (startBlock.add(duration).gt(block)) {
+    // supply = rewardSupply.mul(block).mul(block.sub(startBlock)).div(startBlock.add(duration).mul(duration));
+    supply = rewardSupply.mul(blockNumber).mul(blockNumber.sub(startBlock)).div(startBlock.add(duration).mul(duration));
   } else {
-    reward = rewardSupply;
+    supply = rewardSupply;
   }
-  reward = reward.sub(accumulatedReward);
-  accumulatedReward = accumulatedReward.add(reward);
+
   return {
-    reward,
-    accumulatedReward,
+    supply,
   };
 }
