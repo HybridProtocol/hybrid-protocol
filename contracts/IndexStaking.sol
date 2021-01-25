@@ -22,9 +22,9 @@ contract IndexStaking is ReentrancyGuard {
     uint public activeStakeDeposits; // T
     mapping(address => uint) public stake; // stake
     mapping(address => uint) public stakedSnapshot; // S0
-    mapping(address => uint) public userStartBlock;
 
     uint public startBlock;
+    uint public lastWithdrawBlock;
 
     event Deposited(address account, uint amount);
     event Withdrawn(address account, uint deposited, uint reward);
@@ -36,6 +36,7 @@ contract IndexStaking is ReentrancyGuard {
         totalSupply = _totalSupply;
         rewardSupply = _rewardSupply;
         startBlock = block.number;
+        lastWithdrawBlock = startBlock;
     }
 
     function deposit(uint _amount) public {
@@ -46,7 +47,6 @@ contract IndexStaking is ReentrancyGuard {
         SafeTransfer.transferFromERC20(address(stakingToken), msg.sender, address(this), _amount);
         stake[msg.sender] = _amount;
         stakedSnapshot[msg.sender] = staked;
-        userStartBlock[msg.sender] = block.number;
         activeStakeDeposits = activeStakeDeposits.add(_amount);
         emit Deposited(msg.sender, _amount);
     }
@@ -54,12 +54,11 @@ contract IndexStaking is ReentrancyGuard {
     function withdraw() public {
         require(activeStakeDeposits != 0, "IndexStaking: NO_STAKERS");
         (uint userReward, uint totalReward) = rewardOf(msg.sender);
-        console.logUint(totalReward);
-        console.logUint(userReward);
         staked = _getActualStaked(totalReward);
         uint deposited = stake[msg.sender];
         activeStakeDeposits = activeStakeDeposits.sub(deposited);
         stake[msg.sender] = 0;
+        lastWithdrawBlock = block.number;
         SafeTransfer.sendERC20(address(stakingToken), msg.sender, deposited);
         SafeTransfer.sendERC20(address(rewardToken), msg.sender, userReward);
         emit Withdrawn(msg.sender, deposited, userReward);
@@ -83,15 +82,14 @@ contract IndexStaking is ReentrancyGuard {
 
     function _getTotalReward() private view returns (uint) {
         uint currentCirculatingSupply = _calculateCirculatingSupply(block.number);
-        uint initCirculatingSupply = _calculateCirculatingSupply(userStartBlock[msg.sender]);
-        return (currentCirculatingSupply.sub(initCirculatingSupply));
+        uint lastWithdrawCirculatingSupply = _calculateCirculatingSupply(lastWithdrawBlock);
+        return currentCirculatingSupply.sub(lastWithdrawCirculatingSupply);
     }
 
     function _calculateCirculatingSupply(uint _blockNumber) private view returns (uint circulatingSupply) {
         // 0.48 * totalSupply * N * (N - N1) / ((N1 + duration) * duration)
 
-        // if (startBlock.add(duration) > _blockNumber) {
-        if (startBlock.add(duration) > block.number) {
+        if (startBlock.add(duration) > _blockNumber) {
             circulatingSupply = rewardSupply
                 .mul(_blockNumber)
                 .mul(_blockNumber.sub(startBlock))

@@ -13,6 +13,7 @@ const ERRORS = {
   SAFE_TRANSFER_SEND_ERC20: 'SafeTransfer: SEND_ERC20',
   SAFE_MATH_OVERFLOW: 'SafeMath: subtraction overflow',
   INDEX_STAKING_INVALID_DATE: 'IndexStaking: INVALID_DATE',
+  INDEX_STAKING_NO_STAKERS: 'IndexStaking: NO_STAKERS',
 };
 
 const MULTIPLICATOR = '100000000000000000000';
@@ -550,7 +551,7 @@ describe('IndexStaking', () => {
 
       // run method withdraw() - reverted
       await expect(indexStaking.connect(aliceWallet)['withdraw(uint256)'](amountSToken)).to.be.revertedWith(
-        ERRORS.SAFE_MATH_OVERFLOW,
+        ERRORS.INDEX_STAKING_NO_STAKERS,
       );
     });
 
@@ -780,7 +781,7 @@ describe('IndexStaking', () => {
         // run method withdraw() - successfully
         await expect(indexStaking.connect(walletData.wallet)['withdraw()']()).not.to.be.reverted;
 
-        // get and check afterStake
+        // // get and check afterStake
         const afterStake = await indexStaking.stake(walletData.wallet.address);
         expect(afterStake).to.be.eq(expectedUserRewardParams.userStake);
 
@@ -1467,10 +1468,7 @@ async function calculateExpectedUserRewardParams(
 
   let staked = await indexStaking.staked();
   if (!activeStakeDeposits.eq(0)) {
-    // console.log("totalReward: ",totalReward.toString());
-    // console.log("activeStakeDeposits: ",activeStakeDeposits.toString());
     staked = staked.add(totalReward.mul(MULTIPLICATOR).div(activeStakeDeposits));
-    // console.log("staked: ", staked.toString());
   }
   const userStakedSnapshot = await indexStaking.stakedSnapshot(await wallet.getAddress());
   const userReward = userDeposit.mul(staked.sub(userStakedSnapshot)).div(MULTIPLICATOR);
@@ -1495,29 +1493,23 @@ async function calculateExpectedTotalReward(
   let totalReward: BigNumber;
   let initCirculatingSupply: BigNumber;
   let currentCirculatingSupply: BigNumber;
-  const userStartBlock = await indexStaking.userStartBlock(await wallet.getAddress());
+  const lastWithdrawBlock = await indexStaking.lastWithdrawBlock();
   const blockNumber = BigNumber.from(await provider.getBlockNumber()).add(1);
-  initCirculatingSupply = (await calculatedCirculatedSupply(userStartBlock, provider, indexStaking)).supply;
-  currentCirculatingSupply = (await calculatedCirculatedSupply(blockNumber, provider, indexStaking)).supply;
+  initCirculatingSupply = (await calculatedCirculatedSupply(lastWithdrawBlock, indexStaking)).supply;
+  currentCirculatingSupply = (await calculatedCirculatedSupply(blockNumber, indexStaking)).supply;
   totalReward = currentCirculatingSupply.sub(initCirculatingSupply);
   return {
     totalReward,
   };
 }
 
-async function calculatedCirculatedSupply(
-  block: BigNumber,
-  provider: any,
-  indexStaking: IndexStaking,
-): Promise<CirculatedSupply> {
+async function calculatedCirculatedSupply(block: BigNumber, indexStaking: IndexStaking): Promise<CirculatedSupply> {
   let supply: BigNumber;
   const startBlock = await indexStaking.startBlock();
   const duration = await indexStaking.duration();
   const rewardSupply = await indexStaking.rewardSupply();
-  const blockNumber = BigNumber.from(await provider.getBlockNumber()).add(1);
   if (startBlock.add(duration).gt(block)) {
-    // supply = rewardSupply.mul(block).mul(block.sub(startBlock)).div(startBlock.add(duration).mul(duration));
-    supply = rewardSupply.mul(blockNumber).mul(blockNumber.sub(startBlock)).div(startBlock.add(duration).mul(duration));
+    supply = rewardSupply.mul(block).mul(block.sub(startBlock)).div(startBlock.add(duration).mul(duration));
   } else {
     supply = rewardSupply;
   }
