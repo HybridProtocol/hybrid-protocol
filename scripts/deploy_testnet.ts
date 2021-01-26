@@ -136,9 +136,9 @@ async function main() {
   );
   await indexStaking.deployed();
   console.log('Index Staking deployed to:', indexStaking.address);
-  tx = await hybridToken.mint(indexStaking.address, commonMintedAmount);
+  tx = await hybridToken.mint(indexStaking.address, rewardSupply);
   await hre.ethers.provider.waitForTransaction(tx.hash);
-  console.log(commonMintedAmount, 'HBT minted to IndexStaking contract');
+  console.log(formatEth(rewardSupply), 'HBT minted to IndexStaking contract');
   console.log('---------------------------------------------------------------------------');
   const IndexGovernance = await hre.ethers.getContractFactory('IndexGovernance');
   const indexGovernance = await IndexGovernance.deploy(indexHybridToken.address, hybridToken.address, 50);
