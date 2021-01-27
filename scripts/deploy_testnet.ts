@@ -43,13 +43,8 @@ async function main() {
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await saleHybridToken.balanceOf(aliceWallet)), 'sHBT minted to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
-  const USDC = await hre.ethers.getContractFactory('TestHybridToken');
-  const usdc = await USDC.deploy(
-    'USDC Testnet',
-    'USDC',
-    await deployer.getAddress(),
-    BigNumber.from(commonMintedAmount).mul(100),
-  );
+  const USDC = await hre.ethers.getContractFactory('TToken');
+  const usdc = await USDC.deploy('USDC Testnet', 'USDC', BigNumber.from(6));
   await usdc.deployed();
   const usdcAddress = usdc.address;
   console.log('USDC deployed to:', usdcAddress);
