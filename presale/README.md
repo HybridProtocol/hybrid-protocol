@@ -163,6 +163,24 @@ You cannot exit 100% using Pool Tokens (rebind will revert). It is possible to d
 
 Specifically, if a CRP has the canRemoveAllTokens permission, it is possible to call removeToken for every token in the pool, and recover all assets without loss. (Otherwise, with only canAddRemoveTokens permission, the pool would always need to contain at least two tokens, and you could only "withdraw" 1/3 of the balance at a time through the exit methods.) There are special cases where this is appropriate (e.g., an "auction," where only the controller provides liquidity), but any pools with either "removeToken" right enabled require a high level of trust, since the controller could remove all assets from the pool at any time.
 
+
+# Hybrid Protocol
+
+The Balancer’s Smart Pool will be live for 5 days and is designed to prevent front-running. It will start at a high price then go down quickly as the weights of the pool change. 
+
+This prevents people from front-running other participants and speculating on HBT tokens rather than using them for governance and staking. After the 5 day period, the Balancer LBP will be stopped.
+
+Rules of 4-tier token sale:
+
+1. Create a HBT/USDC Balancer LBP with 1,000,000 HBT tokens and USDC tokens.
+
+2. The Balancer LBP shall work until 32 500 blocks are mined from the start of the trading (approximately 5 days).
+
+3. The weights will change gradually from the start (USDC:HBT = 90:10) to the end (USDC:HBT = 30:70) during that period.
+
+4. Weight for USDC W = 0.9 * pow(3, - blocksElapsed / (5 * 6500))
+   Weight for HBT W =  1 - USDC W.
+
 ## How to create Configurable Right Pool
 At first you need to get factory for Configurable Right Pool creation. It is avaiable at address in **Ropsten** testnet
 

@@ -54,11 +54,8 @@ contract IndexStaking is ReentrancyGuard {
     function withdraw() public {
         require(activeStakeDeposits != 0, "IndexStaking: NO_STAKERS");
         (uint userReward, uint totalReward) = rewardOf(msg.sender);
-        staked = _getActualStaked(totalReward);
         uint deposited = stake[msg.sender];
-        activeStakeDeposits = activeStakeDeposits.sub(deposited);
-        stake[msg.sender] = 0;
-        lastWithdrawBlock = block.number;
+        _updatePool(deposited, totalReward);
         SafeTransfer.sendERC20(address(stakingToken), msg.sender, deposited);
         SafeTransfer.sendERC20(address(rewardToken), msg.sender, userReward);
         emit Withdrawn(msg.sender, deposited, userReward);
@@ -71,9 +68,29 @@ contract IndexStaking is ReentrancyGuard {
     }
 
     function withdraw(uint _amount) external nonReentrant {
+        require(activeStakeDeposits != 0, "IndexStaking: NO_STAKERS");
+        require(_amount != 0, "IndexStaking: ZERO_WITHDRAW");
         uint deposited = stake[msg.sender];
-        withdraw();
-        deposit(deposited.sub(_amount));
+        if (deposited == _amount || startBlock.add(duration) < block.number) {
+            withdraw();
+        } else {
+            (uint userReward, uint totalReward) = rewardOf(msg.sender);
+            _updatePool(deposited, totalReward);
+            SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount);
+            SafeTransfer.sendERC20(address(rewardToken), msg.sender, userReward);
+            uint restake = deposited.sub(_amount);
+            stake[msg.sender] = restake;
+            stakedSnapshot[msg.sender] = staked;
+            activeStakeDeposits = activeStakeDeposits.add(restake);
+            emit Deposited(msg.sender, restake);
+        }
+    }
+
+    function _updatePool(uint _deposited, uint _totalReward) private {
+        staked = _getActualStaked(_totalReward);
+        activeStakeDeposits = activeStakeDeposits.sub(_deposited);
+        stake[msg.sender] = 0;
+        lastWithdrawBlock = block.number;
     }
 
     function _getActualStaked(uint _totalReward) private view returns (uint) {

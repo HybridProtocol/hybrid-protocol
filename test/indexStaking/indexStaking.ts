@@ -957,7 +957,7 @@ describe('IndexStaking', () => {
       expect(expectedActiveStakeDeposits).to.be.gt(0);
     });
 
-    it('success - withdraw part, amount = 0', async () => {
+    it('fail - withdraw part, amount = 0', async () => {
       // set walletDataList
       const walletDataList = [
         { wallet: aliceWallet, amountSToken: expandTo18Decimals(100) },
@@ -1040,21 +1040,10 @@ describe('IndexStaking', () => {
         expect(expectedUserRewardParams.userStake).to.be.eq(0);
         expect(expectedUserRewardParams.userStakedSnapshot).to.be.eq(beforeStakedSnapshot);
         expect(expectedUserRewardParams.totalReward).to.be.gte(0);
-        expect(expectedUserRewardParams.activeStakeDeposits).to.be.eq(
-          expectedActiveStakeDeposits.sub(expectedUserRewardParams.userDeposit),
-        );
-        expect(expectedUserRewardParams.staked).to.be.eq(
-          !expectedActiveStakeDeposits.eq(0)
-            ? expectedStaked.add(
-                expectedUserRewardParams.totalReward.mul(MULTIPLICATOR).div(expectedActiveStakeDeposits),
-              )
-            : expectedStaked,
-        );
         expect(expectedUserRewardParams.userReward).to.be.gt(0);
 
         // run method withdraw(withdrawAmountSToken) - successfully
-        await expect(indexStaking.connect(walletData.wallet)['withdraw(uint256)'](withdrawAmountSToken)).not.to.be
-          .reverted;
+        await expect(indexStaking.connect(walletData.wallet)['withdraw(uint256)'](withdrawAmountSToken)).to.be.reverted;
 
         // get and check afterStake
         const afterStake = await indexStaking.stake(walletData.wallet.address);
@@ -1062,18 +1051,15 @@ describe('IndexStaking', () => {
 
         // get afterStakedSnapshot
         const afterStakedSnapshot = await indexStaking.stakedSnapshot(walletData.wallet.address);
-        expect(afterStakedSnapshot).to.be.gt(expectedUserRewardParams.userStakedSnapshot);
-        expect(afterStakedSnapshot).to.be.eq(expectedUserRewardParams.staked);
+        expect(afterStakedSnapshot).to.be.eq(expectedUserRewardParams.userStakedSnapshot);
 
         // get and check afterBalanceRToken
         const afterBalanceRToken = await rToken.balanceOf(walletData.wallet.address);
-        expect(afterBalanceRToken).to.be.eq(beforeBalanceRToken.add(expectedUserRewardParams.userReward));
+        expect(afterBalanceRToken).to.be.eq(beforeBalanceRToken);
 
         // get and check afterBalanceSToken
         const afterBalanceSToken = await sToken.balanceOf(walletData.wallet.address);
-        expect(afterBalanceSToken).to.be.eq(
-          beforeBalanceSToken.add(expectedUserRewardParams.userDeposit).sub(remainderStake),
-        );
+        expect(afterBalanceSToken).to.be.eq(beforeBalanceSToken);
 
         // get and check afterActiveStakeDeposits
         afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
@@ -1081,19 +1067,14 @@ describe('IndexStaking', () => {
 
         // get and check afterStaked
         const afterStaked = await indexStaking.staked();
-        expect(afterStaked).to.be.eq(expectedUserRewardParams.staked);
+        expect(afterStaked).to.be.eq(0);
 
         // update expectedActiveStakeDeposits
-        expectedActiveStakeDeposits = expectedUserRewardParams.activeStakeDeposits.add(remainderStake);
+        expectedActiveStakeDeposits = expectedUserRewardParams.activeStakeDeposits;
 
         // update expectedStaked
         expectedStaked = expectedUserRewardParams.staked;
       }
-
-      // get and check afterActiveStakeDeposits, expectedActiveStakeDeposits
-      afterActiveStakeDeposits = await indexStaking.activeStakeDeposits();
-      expect(afterActiveStakeDeposits).to.be.eq(expectedActiveStakeDeposits);
-      expect(expectedActiveStakeDeposits).to.be.gt(0);
     });
 
     it('success - withdraw without deposit', async () => {

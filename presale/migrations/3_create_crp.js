@@ -23,6 +23,7 @@ module.exports = async function (deployer, network, accounts) {
   let swapFee;
 
   if (network === 'development' || network === 'coverage' || network == 'ropsten-fork') {
+  
     usdc = await TToken.new('USDC', 'USDC Token', 18);
     hbt = await TToken.new('HBT Token', 'HBT', 18);
 
@@ -40,8 +41,8 @@ module.exports = async function (deployer, network, accounts) {
     hbt = await TToken.at(HBT);
   }
 
-  startWeights = [toWei('36'), toWei('4')];
-  startBalances = [toWei('9000000'), toWei('1000000')];
+  startWeights = [toWei('1'), toWei('39')];
+  startBalances = [toWei('80000'), toWei('40')];
   swapFee = 10 ** 15;
 
   const poolParams = {
@@ -62,20 +63,14 @@ module.exports = async function (deployer, network, accounts) {
     canChangeCap: false,
   };
 
-  crpFactory = await CRPFactory.at('0x4db44402434afe4B0d27D8576B1542c7f213ac23');
-
+  crpFactory = await CRPFactory.at(CRPFactory.address);
   CONTROLLER = await crpFactory.newCrp.call(bFactoryAddress, poolParams, permissions);
-
   await crpFactory.newCrp(bFactoryAddress, poolParams, permissions);
-
   controller = await ConfigurableRightsPool.at(CONTROLLER);
-
   const CONTROLLER_ADDRESS = controller.address;
-
   await hbt.approve(CONTROLLER_ADDRESS, MAX);
   await usdc.approve(CONTROLLER_ADDRESS, MAX);
-
-  await controller.createPool(toWei('1000'), 10, 10);
+  await controller.createPool(toWei('100'));
   console.log('Configurable Rights Pool at: ', CONTROLLER);
   console.log('USDC at: ', USDC);
   console.log('HBT at: ', HBT);
