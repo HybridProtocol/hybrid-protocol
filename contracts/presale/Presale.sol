@@ -52,16 +52,24 @@ contract Presale is Ownable, PresaleConstants, ReentrancyGuard {
     }
 
     function buy(uint _amountUSDC) external nonReentrant {
+        // 1
         require(block.number <= startBlock + duration, "Presale: INVALID_DATE");
+        // 100000000000000000000000-99995000000000000000000 = 5
         uint availableAmountSHBT = purchasedLimit.sub(purchasedAmountOf[msg.sender]);
+
+        // 1 USDC
+        // 1 * 1000000000000000000 / 150000000000000000 = 1 * 100 / 15 = 6
         uint amountSHBT = _amountUSDC.mul(ONE_HBT_IN_WEI).div(rate);
         if (amountSHBT > availableAmountSHBT) {
+            // 6-5 = 1
+            uint remainder = amountSHBT.sub(availableAmountSHBT);
             amountSHBT = availableAmountSHBT;
-            _amountUSDC = amountSHBT.mul(rate).div(ONE_HBT_IN_WEI);
+            // 1 * 150000000000000000 * 100 / 1000000000000000000 = 15 * 100 / 100 = 15
+            _amountUSDC = remainder.mul(rate).mul(100).div(ONE_HBT_IN_WEI);
         }
         require(_amountUSDC > 0, "Presale: ZERO_AMOUNT_USDC");
         require(amountSHBT > 0, "Presale: ZERO_AMOUNT_SHBT");
-        SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC);
+        SafeTransfer.transferFromERC20(address(USDC), msg.sender, address(this), _amountUSDC.mul(10**6).div(100));
         SafeTransfer.sendERC20(address(SHBT), msg.sender, amountSHBT);
         purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(amountSHBT);
         totalSold = totalSold.add(amountSHBT);
