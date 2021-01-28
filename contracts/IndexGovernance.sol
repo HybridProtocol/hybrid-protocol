@@ -9,6 +9,7 @@ import "../interfaces/IIndexHybridToken.sol";
 import "../interfaces/IHybridToken.sol";
 import "../utils/Maintenance.sol";
 import "../libraries/SafeTransfer.sol";
+import "hardhat/console.sol";
 
 contract IndexGovernance is Maintenance, ReentrancyGuard {
     using SafeMath for uint256;

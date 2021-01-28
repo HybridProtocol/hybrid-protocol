@@ -87,17 +87,16 @@ async function main() {
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await hybridToken.balanceOf(aliceWallet)), 'HBT minted to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
-  const IndexHybridToken = await hre.ethers.getContractFactory('TestIndexHybridToken');
+  const IndexHybridToken = await hre.ethers.getContractFactory('IndexHybridToken');
   const indexHybridToken = await IndexHybridToken.deploy('1000000000000000000000000', '1000000000000000000000000000');
   await indexHybridToken.deployed();
   console.log('Index Hybrid Token deployed to:', indexHybridToken.address);
-  tx = await indexHybridToken.mint(aliceWallet, commonMintedAmount);
+  await indexHybridToken.addAddressToMaintainers(deployer.address);
+  await indexHybridToken.addAddressToMaintainers(aliceWallet);
+  tx = await indexHybridToken.mintAmount([aliceWallet], commonMintedAmount);
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await indexHybridToken.balanceOf(aliceWallet)), 'xHBT minted to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
-  await indexHybridToken.addAddressToMaintainers(deployer.address);
-  await indexHybridToken.addAddressToMaintainers(aliceWallet);
-
   const VestingSwap = await hre.ethers.getContractFactory('VestingSwap');
   const vestingSwap = await VestingSwap.deploy(
     alphaPresale.address,

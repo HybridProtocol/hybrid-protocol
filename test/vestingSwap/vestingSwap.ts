@@ -90,6 +90,10 @@ describe('VestingSwap', async () => {
   });
 
   describe('startBetaSwap', () => {
+    beforeEach(async () => {
+      await HBT.mintForSwap(vestingSwap.address);
+      await vestingSwap.startAlphaSwap();
+    });
     it('fail - not an owner', async () => {
       await checkAddressContractOwner(aliceWallet.address, betaPresale, false);
       await expect(betaPresale.connect(aliceWallet).start()).to.be.revertedWith(ERRORS.IS_NOT_OWNER);
@@ -102,6 +106,11 @@ describe('VestingSwap', async () => {
   });
 
   describe('startGammaSwap', () => {
+    beforeEach(async () => {
+      await HBT.mintForSwap(vestingSwap.address);
+      await vestingSwap.startAlphaSwap();
+      await vestingSwap.startBetaSwap();
+    });
     it('fail - not an owner', async () => {
       await checkAddressContractOwner(aliceWallet.address, gammaPresale, false);
       await expect(gammaPresale.connect(aliceWallet).start()).to.be.revertedWith(ERRORS.IS_NOT_OWNER);
