@@ -5,7 +5,7 @@ import { convertStringToArrayish, formatEth } from '../test/shared/utilities';
 async function main() {
   let tx;
   const aliceWallet = '0x76Fd4B48af98436A26Bf649703cE7A2620F4dEEa';
-  const commonMintedAmount = '100000000000000000000000';
+  const commonMintedAmount = '100000000000000000000000000';
   const hbtTotalSupply = 100000000;
   const presaleDuration = 10000;
   const stakingDuration = 33000;

@@ -17,6 +17,7 @@ contract Presale is Ownable, PresaleConstants, ReentrancyGuard {
     ISaleHybridToken SHBT;
 
     uint internal duration; // blocks
+    uint private constant ONE_USDC = 1000000;
 
     uint internal rate;
     uint internal startBlock;
@@ -52,19 +53,18 @@ contract Presale is Ownable, PresaleConstants, ReentrancyGuard {
     }
 
     function buy(uint _amountUSDC) external nonReentrant {
-        // // 1 USDC = 1000000
+        // 1 USDC = 1000000
+        require(_amountUSDC >= ONE_USDC, "Presale: LESS_ONE_USDC");
         require(block.number <= startBlock + duration, "Presale: INVALID_DATE");
-        // 100000000000000000000000-99995000000000000000000 = 5
+        // 100000000000000000000000-99995000000000000000000 = 5000000000000000000
         uint availableAmountSHBT = purchasedLimit.sub(purchasedAmountOf[msg.sender]);
-        // 1000000 * 1000000000000000000 / 150000000000000000 / 1000000 = 100 / 15 = 6
-        uint amountSHBT = _amountUSDC.mul(ONE_HBT_IN_WEI).div(rate).div(10**6);
+        // 1000000 * 1000000000000000000 / 150000000000000000 / 1000000 = 100 / 15 = 6000000000000000000
+        uint amountSHBT = _amountUSDC.mul(ONE_HBT_IN_WEI).div(rate).mul(ONE_HBT_IN_WEI).div(10**6);
         if (amountSHBT > availableAmountSHBT) {
-            // 6-5 = 1
-            uint remainder = amountSHBT.sub(availableAmountSHBT);
-            // 5
+            // 5000000000000000000
             amountSHBT = availableAmountSHBT;
-            // 1 * 150000000000000000 * 1000000 / 1000000000000000000 = 150000
-            _amountUSDC = remainder.mul(rate).mul(10**6).div(ONE_HBT_IN_WEI);
+            // 5000000000000000000 * 150000000000000000 * 1000000 / 1000000000000000000 / 1000000000000000000
+            _amountUSDC = amountSHBT.mul(rate).mul(1000000).div(ONE_HBT_IN_WEI).div(ONE_HBT_IN_WEI);
         }
         require(_amountUSDC > 0, "Presale: ZERO_AMOUNT_USDC");
         require(amountSHBT > 0, "Presale: ZERO_AMOUNT_SHBT");
