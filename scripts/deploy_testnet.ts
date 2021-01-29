@@ -91,8 +91,10 @@ async function main() {
   const indexHybridToken = await IndexHybridToken.deploy('1000000000000000000000000', '1000000000000000000000000000');
   await indexHybridToken.deployed();
   console.log('Index Hybrid Token deployed to:', indexHybridToken.address);
-  await indexHybridToken.addAddressToMaintainers(deployer.address);
-  await indexHybridToken.addAddressToMaintainers(aliceWallet);
+  tx = await indexHybridToken.addAddressToMaintainers(deployer.address);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  tx = await indexHybridToken.addAddressToMaintainers(aliceWallet);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
   tx = await indexHybridToken.mintAmount([aliceWallet], commonMintedAmount);
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await indexHybridToken.balanceOf(aliceWallet)), 'xHBT minted to:', aliceWallet);
