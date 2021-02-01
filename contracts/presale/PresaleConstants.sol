@@ -16,6 +16,6 @@ contract PresaleConstants {
     uint public constant GAMMA_PRESALE_RATE = 25 * ONE_HBT_IN_WEI / 100; // 0.25 USD
     uint public constant ALPHA_PURCHASE_LIMIT = 100000 * ONE_HBT_IN_WEI; // 100 000 sHBT
     uint public constant BETA_PURCHASE_LIMIT = 20000 * ONE_HBT_IN_WEI;   // 20 000 sHBT
-    uint public constant GAMMA_PURCHASE_LIMIT = 4000 * ONE_HBT_IN_WEI;   // 40 000 sHBT
+    uint public constant GAMMA_PURCHASE_LIMIT = 40000 * ONE_HBT_IN_WEI;   // 40 000 sHBT
 
 }
