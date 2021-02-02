@@ -65,11 +65,13 @@ contract VestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
     }
 
     function startBetaSwap() external onlyOwner nonReentrant isStarted(alphaPresale) {
+        require(swap[betaPresale].start == 0, "VestingSwap: Beta already started");
         swap[betaPresale].start = now;
         emit BetaSwapInitialized(now, swap[betaPresale].vesting);
     }
 
     function startGammaSwap() external onlyOwner nonReentrant isStarted(betaPresale) {
+        require(swap[gammaPresale].start == 0, "VestingSwap: Gamma already started");
         swap[gammaPresale].start = now;
         emit GammaSwapInitialized(now, swap[gammaPresale].vesting);
     }

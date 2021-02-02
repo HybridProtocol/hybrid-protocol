@@ -99,7 +99,7 @@ async function main() {
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await indexHybridToken.balanceOf(aliceWallet)), 'xHBT minted to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
-  const VestingSwap = await hre.ethers.getContractFactory('VestingSwap');
+  const VestingSwap = await hre.ethers.getContractFactory('TestVestingSwap');
   const vestingSwap = await VestingSwap.deploy(
     alphaPresale.address,
     betaPresale.address,

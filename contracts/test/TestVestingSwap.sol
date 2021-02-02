@@ -12,6 +12,7 @@ import "../../libraries/SafeTransfer.sol";
 import "../presale/PresaleConstants.sol";
 
 
+
 contract TestVestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
     using SafeMath for uint256;
 
@@ -19,9 +20,9 @@ contract TestVestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
     address private betaPresale;
     address private gammaPresale;
 
-    uint32 private constant SECONDS_PER_4_HOURS = 4 * 60 * 60;
     uint32 private constant SECONDS_PER_DAY = 24 * 60 * 60;
-    uint32 private constant SECONDS_PER_MONTH = SECONDS_PER_DAY * 30;
+    // uint32 private constant SECONDS_PER_MONTH = SECONDS_PER_DAY * 30;
+    uint32 private constant SECONDS_PER_MONTH = SECONDS_PER_DAY / 24 / 6;
 
     address private HBT;
     address private sHBT;
@@ -33,7 +34,7 @@ contract TestVestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
     }
 
     mapping(address => SwapInfo) public swap;
-    mapping(address => uint) public swappedAmountOf;
+    mapping(address => mapping(address => uint)) presaleSwappedAmountOf;
 
     event AlphaSwapInitialized(uint, uint8[7]);
     event BetaSwapInitialized(uint, uint8[7]);
@@ -58,17 +59,20 @@ contract TestVestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
 
     function startAlphaSwap() external onlyOwner nonReentrant {
         uint requiredBalance = ALPHA_PRESALE_LIMIT.add(BETA_PRESALE_LIMIT).add(GAMMA_PRESALE_LIMIT); 
+        require(swap[alphaPresale].start == 0, "VestingSwap: Alpha already started");
         require(IERC20(HBT).balanceOf(address(this)) == requiredBalance, "VestingSwap: HBT_NOT_ALLOCATED_FOR_ALL_SWAPS");
         swap[alphaPresale].start = now;
         emit AlphaSwapInitialized(now, swap[alphaPresale].vesting);
     }
 
-    function startBetaSwap() external onlyOwner nonReentrant {
+    function startBetaSwap() external onlyOwner nonReentrant isStarted(alphaPresale) {
+        require(swap[betaPresale].start == 0, "VestingSwap: Beta already started");
         swap[betaPresale].start = now;
         emit BetaSwapInitialized(now, swap[betaPresale].vesting);
     }
 
-    function startGammaSwap() external onlyOwner nonReentrant {
+    function startGammaSwap() external onlyOwner nonReentrant isStarted(betaPresale) {
+        require(swap[gammaPresale].start == 0, "VestingSwap: Gamma already started");
         swap[gammaPresale].start = now;
         emit GammaSwapInitialized(now, swap[gammaPresale].vesting);
     }
@@ -86,17 +90,16 @@ contract TestVestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
     }
 
     function availableAmountFor(address _presale, address _account) public view returns (uint available) {
-        uint monthDuration = SECONDS_PER_4_HOURS;
         uint percentagesUnlocked = 100;
         uint purchased = IPresale(_presale).purchasedAmount(_account);
-        uint monthsElapsed = now.sub(swap[_presale].start).div(monthDuration);
+        uint monthsElapsed = now.sub(swap[_presale].start).div(SECONDS_PER_MONTH);
         if (monthsElapsed < 6) {
             percentagesUnlocked = 0;
             for (uint8 i = 0; i <= monthsElapsed; i++) {
                 percentagesUnlocked = percentagesUnlocked.add(swap[_presale].vesting[i]);
             }
         }
-        available = purchased.mul(percentagesUnlocked).div(100).sub(swappedAmountOf[_account]);
+        available = purchased.mul(percentagesUnlocked).div(100).sub(presaleSwappedAmountOf[_presale][_account]);
     }
 
     function _swap(address _presale, address _account, uint _amount) private {
@@ -105,7 +108,7 @@ contract TestVestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
         ISaleHybridToken(sHBT).burn(_account, _amount);
         SafeTransfer.sendERC20(address(HBT), _account, _amount);
         swap[_presale].swapped = swap[_presale].swapped.add(_amount);
-        swappedAmountOf[_account] = swappedAmountOf[_account].add(_amount);
+        presaleSwappedAmountOf[_presale][_account] = presaleSwappedAmountOf[_presale][_account].add(_amount);
         emit Swap(_account, _amount);
     }
 }
