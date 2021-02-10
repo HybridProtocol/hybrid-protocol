@@ -117,14 +117,14 @@ describe('IndexGovernance', () => {
     indexGovernance = fixture.indexGovernance;
 
     // init test action
-    await indexHybridToken.addAddressesToMainteiners([aliceWallet.address, indexGovernance.address]); // add aliceWallet.address, indexGovernance.address to mainteiners
+    await indexHybridToken.addAddressesToMaintainers([aliceWallet.address, indexGovernance.address]); // add aliceWallet.address, indexGovernance.address to mainteiners
     await indexHybridToken
       .connect(aliceWallet)
       .updateComposition(voteProposalAssets.start.assets, voteProposalAssets.start.weights); // set start composition
     await stakingToken.transfer(aliceWallet.address, expandTo18Decimals(1000)); // transfer sToken tokens to Alice address
     await stakingToken.transfer(bobWallet.address, expandTo18Decimals(1000)); // transfer sToken tokens to Bob address
     await stakingToken.transfer(otherWallet1.address, expandTo18Decimals(1000)); // transfer sToken tokens to OtherWallet address
-    await indexGovernance.addAddressesToMainteiners([aliceWallet.address, bobWallet.address]); // add aliceWallet.address and bobWallet.address to mainteiners
+    await indexGovernance.addAddressesToMaintainers([aliceWallet.address, bobWallet.address]); // add aliceWallet.address and bobWallet.address to mainteiners
 
     // get and check indexGovernance empty proposal
     indexGovernanceEmptyProposal = await indexGovernance.proposal();
@@ -834,136 +834,13 @@ describe('IndexGovernance', () => {
       expect(beforeVotesOfUser).to.be.eq(stakingTokenAmount);
 
       // run method claimFunds() - reverted
-      await expect(
-        indexGovernance.connect(otherWallet1).claimFunds(stakingTokenAmount, beforeProposal.id),
-      ).to.be.revertedWith(ERRORS.VOTING_IN_PROGRESS);
+      await expect(indexGovernance.connect(otherWallet1).claimFunds(beforeProposal.id)).to.be.revertedWith(
+        ERRORS.VOTING_IN_PROGRESS,
+      );
 
       // get and check afterVotesOfUser
       const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
       expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser);
-    });
-
-    it('fail - could not claim funds more than staking', async () => {
-      // get voteAssets
-      const voteAssets = voteProposalAssets.base;
-
-      // run method createProposal() - successfully
-      await expect(
-        indexGovernance
-          .connect(aliceWallet)
-          .createProposal(
-            voteAssets.assets,
-            voteAssets.weights,
-            voteAssets.duration,
-            voteAssets.title,
-            voteAssets.description,
-            voteAssets.link,
-          ),
-      ).not.to.be.reverted;
-
-      // set stakingTokenAmount, increase stakingToken allowance and do votes
-      const stakingTokenAmount = 500;
-      expect(stakingTokenAmount).to.be.gt(0);
-      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, stakingTokenAmount);
-      await stakingToken.connect(bobWallet).increaseAllowance(indexGovernance.address, stakingTokenAmount);
-      await expect(indexGovernance.connect(otherWallet1).vote(stakingTokenAmount, true)).not.to.be.reverted;
-      await expect(indexGovernance.connect(bobWallet).vote(stakingTokenAmount, false)).not.to.be.reverted;
-
-      // get and check beforeIndexGovernanceBalanceStakingToken
-      const beforeIndexGovernanceBalanceStakingToken = await stakingToken.balanceOf(indexGovernance.address);
-      expect(beforeIndexGovernanceBalanceStakingToken).to.be.eq(stakingTokenAmount * 2);
-
-      // get and check beforeProposal
-      const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id).to.be.eq(1);
-
-      // get beforeBalanceStakingToken
-      const beforeBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
-
-      // get and check beforeVotesOfUser
-      const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(beforeVotesOfUser).to.be.eq(stakingTokenAmount);
-
-      // mine blocks
-      await mineBlocks(hre.ethers.provider, voteAssets.duration);
-
-      // run method claimFunds() - reverted
-      const claimedStakingTokenAmount = stakingTokenAmount + 100;
-      expect(claimedStakingTokenAmount).to.be.gt(beforeVotesOfUser);
-      await expect(indexGovernance.connect(otherWallet1).claimFunds(claimedStakingTokenAmount, beforeProposal.id)).to.be
-        .reverted;
-
-      // get and check afterBalanceStakingToken
-      const afterBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
-      expect(afterBalanceStakingToken).to.be.eq(beforeBalanceStakingToken);
-
-      // get and check afterVotesOfUser
-      const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(afterVotesOfUser).to.be.eq(beforeVotesOfUser);
-
-      // get and check afterIndexGovernanceBalanceStakingToken
-      const afterIndexGovernanceBalanceStakingToken = await stakingToken.balanceOf(indexGovernance.address);
-      expect(afterIndexGovernanceBalanceStakingToken).to.be.eq(beforeIndexGovernanceBalanceStakingToken);
-    });
-
-    it('success - claim funds > 0', async () => {
-      // get voteAssets
-      const voteAssets = voteProposalAssets.base;
-
-      // run method createProposal() - successfully
-      await expect(
-        indexGovernance
-          .connect(aliceWallet)
-          .createProposal(
-            voteAssets.assets,
-            voteAssets.weights,
-            voteAssets.duration,
-            voteAssets.title,
-            voteAssets.description,
-            voteAssets.link,
-          ),
-      ).not.to.be.reverted;
-
-      // set stakingTokenAmount, increase stakingToken allowance and do votes
-      const stakingTokenAmount = 500;
-      expect(stakingTokenAmount).to.be.gt(0);
-      await stakingToken.connect(otherWallet1).increaseAllowance(indexGovernance.address, stakingTokenAmount);
-      await expect(indexGovernance.connect(otherWallet1).vote(stakingTokenAmount, true)).not.to.be.reverted;
-
-      // get and check beforeIndexGovernanceBalanceStakingToken
-      const beforeIndexGovernanceBalanceStakingToken = await stakingToken.balanceOf(indexGovernance.address);
-      expect(beforeIndexGovernanceBalanceStakingToken).to.be.eq(stakingTokenAmount);
-
-      // get and check beforeProposal
-      const beforeProposal = await indexGovernance.proposal();
-      expect(beforeProposal.id).to.be.eq(1);
-
-      // get beforeBalanceStakingToken
-      const beforeBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
-
-      // get and check beforeVotesOfUser
-      const beforeVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(beforeVotesOfUser).to.be.eq(stakingTokenAmount);
-
-      // mine blocks
-      await mineBlocks(hre.ethers.provider, voteAssets.duration);
-
-      // run method claimFunds() - successfully
-      const claimedStakingTokenAmount = stakingTokenAmount - 200;
-      await expect(indexGovernance.connect(otherWallet1).claimFunds(claimedStakingTokenAmount, beforeProposal.id)).not
-        .to.be.reverted;
-
-      // get and check afterBalanceStakingToken
-      const afterBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);
-      expect(afterBalanceStakingToken).to.be.eq(beforeBalanceStakingToken.add(claimedStakingTokenAmount));
-
-      // get and check afterVotesOfUser
-      const afterVotesOfUser = await indexGovernance.votesOfUserByProposalId(beforeProposal.id, otherWallet1.address);
-      expect(afterVotesOfUser).to.be.eq(stakingTokenAmount - claimedStakingTokenAmount);
-
-      // get and check afterIndexGovernanceBalanceStakingToken
-      const afterIndexGovernanceBalanceStakingToken = await stakingToken.balanceOf(indexGovernance.address);
-      expect(afterIndexGovernanceBalanceStakingToken).to.be.eq(stakingTokenAmount - claimedStakingTokenAmount);
     });
 
     it('success - claim funds - 0', async () => {
@@ -981,8 +858,7 @@ describe('IndexGovernance', () => {
       // run method claimFunds() - successfully
       const claimedStakingTokenAmount = 0;
       expect(claimedStakingTokenAmount).to.be.eq(0);
-      await expect(indexGovernance.connect(otherWallet1).claimFunds(claimedStakingTokenAmount, beforeProposal.id)).not
-        .to.be.reverted;
+      await expect(indexGovernance.connect(otherWallet1).claimFunds(claimedStakingTokenAmount)).not.to.be.reverted;
 
       // get and check afterBalanceStakingToken
       const afterBalanceStakingToken = await stakingToken.balanceOf(otherWallet1.address);

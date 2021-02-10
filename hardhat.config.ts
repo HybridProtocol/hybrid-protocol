@@ -5,6 +5,7 @@ import 'hardhat-deploy';
 import 'hardhat-typechain';
 import '@typechain/ethers-v5';
 import '@nomiclabs/hardhat-etherscan';
+import 'solidity-coverage';
 
 import { HardhatUserConfig, task } from 'hardhat/config';
 import { accounts } from './test/shared/accounts';

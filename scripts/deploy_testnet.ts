@@ -5,7 +5,7 @@ import { convertStringToArrayish, formatEth } from '../test/shared/utilities';
 async function main() {
   let tx;
   const aliceWallet = '0x76Fd4B48af98436A26Bf649703cE7A2620F4dEEa';
-  const commonMintedAmount = '100000000000000000000000';
+  const commonMintedAmount = '100000000000000000000000000';
   const hbtTotalSupply = 100000000;
   const presaleDuration = 10000;
   const stakingDuration = 33000;
@@ -24,7 +24,7 @@ async function main() {
     },
     base: {
       assets: [assetArrayishValues.BTC, assetArrayishValues.ETH, assetArrayishValues.BCH, assetArrayishValues.BNB],
-      duration: 7,
+      duration: 57,
       weights: [3500, 2000, 1000, 3500],
       title: 'base title',
       description: 'base description',
@@ -43,13 +43,8 @@ async function main() {
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await saleHybridToken.balanceOf(aliceWallet)), 'sHBT minted to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
-  const USDC = await hre.ethers.getContractFactory('TestHybridToken');
-  const usdc = await USDC.deploy(
-    'USDC Testnet',
-    'USDC',
-    await deployer.getAddress(),
-    BigNumber.from(commonMintedAmount).mul(100),
-  );
+  const USDC = await hre.ethers.getContractFactory('TToken');
+  const usdc = await USDC.deploy('USDC Testnet', 'USDC', BigNumber.from(6));
   await usdc.deployed();
   const usdcAddress = usdc.address;
   console.log('USDC deployed to:', usdcAddress);
@@ -69,8 +64,11 @@ async function main() {
   const gammaPresale = await GammaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await gammaPresale.deployed();
   console.log('Gamma Presale deployed to:', gammaPresale.address);
-  await saleHybridToken.mintPresale(alphaPresale.address, betaPresale.address, gammaPresale.address);
+  tx = await saleHybridToken.mintPresale(alphaPresale.address, betaPresale.address, gammaPresale.address);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log('sHBT tokens were minted to presale contracts');
+  await saleHybridToken.addAddressesToMaintainers([alphaPresale.address, betaPresale.address, gammaPresale.address]);
+  console.log('Presales have been added to maintainers of sHBT contract');
   await alphaPresale.start();
   console.log('Alpha Presale was started');
   await betaPresale.start();
@@ -89,29 +87,39 @@ async function main() {
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await hybridToken.balanceOf(aliceWallet)), 'HBT minted to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
-  const IndexHybridToken = await hre.ethers.getContractFactory('TestIndexHybridToken');
+  const IndexHybridToken = await hre.ethers.getContractFactory('IndexHybridToken');
   const indexHybridToken = await IndexHybridToken.deploy('1000000000000000000000000', '1000000000000000000000000000');
   await indexHybridToken.deployed();
   console.log('Index Hybrid Token deployed to:', indexHybridToken.address);
-  tx = await indexHybridToken.mint(aliceWallet, commonMintedAmount);
+  tx = await indexHybridToken.addAddressToMaintainers(deployer.address);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  tx = await indexHybridToken.addAddressToMaintainers(aliceWallet);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  tx = await indexHybridToken.mintAmount([aliceWallet], commonMintedAmount);
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(formatEth(await indexHybridToken.balanceOf(aliceWallet)), 'xHBT minted to:', aliceWallet);
   console.log('---------------------------------------------------------------------------');
-  await indexHybridToken.addAddressToMaintainers(deployer.address);
-  await indexHybridToken.addAddressToMaintainers(aliceWallet);
-
   const VestingSwap = await hre.ethers.getContractFactory('TestVestingSwap');
   const vestingSwap = await VestingSwap.deploy(
     alphaPresale.address,
     betaPresale.address,
     gammaPresale.address,
     hybridToken.address,
+    saleHybridToken.address,
   );
   await vestingSwap.deployed();
   console.log('Vesting Swap deployed to:', vestingSwap.address);
   tx = await vestingSwap.connect(deployer).transferOwnership(aliceWallet);
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log('Ownership was transferred to:', aliceWallet);
+  await saleHybridToken.addAddressToMaintainers(vestingSwap.address);
+  console.log('Vesting Swap has been added to maintainers of sHBT contract');
+  tx = await hybridToken.addAddressToMaintainers(deployer.address);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  console.log('Deployer was added to Hybrid token maintainers');
+  tx = await hybridToken.mintForSwap(vestingSwap.address);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  console.log('HBT tokens were minted to Vesting Swap contract');
   console.log('---------------------------------------------------------------------------');
   const rewardSupply = BigNumber.from(48).mul(totalSupplyHBT).div(100);
   const IndexStaking = await hre.ethers.getContractFactory('IndexStaking');
@@ -124,9 +132,12 @@ async function main() {
   );
   await indexStaking.deployed();
   console.log('Index Staking deployed to:', indexStaking.address);
+  tx = await hybridToken.mint(indexStaking.address, rewardSupply);
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  console.log(formatEth(rewardSupply), 'HBT minted to IndexStaking contract');
   console.log('---------------------------------------------------------------------------');
   const IndexGovernance = await hre.ethers.getContractFactory('IndexGovernance');
-  const indexGovernance = await IndexGovernance.deploy(indexHybridToken.address, hybridToken.address, 5);
+  const indexGovernance = await IndexGovernance.deploy(indexHybridToken.address, hybridToken.address, 50);
   await indexGovernance.deployed();
   console.log('Index Governance deployed to:', indexGovernance.address);
   await indexHybridToken.addAddressToMaintainers(indexGovernance.address);

@@ -8,7 +8,11 @@ const BalancerSafeMathMock = artifacts.require('BalancerSafeMathMock');
 require('dotenv').config();
 
 module.exports = async function (deployer, network, accounts) {
-  if (network === 'development' || network === 'coverage' || network == 'ropsten-fork') {
+  if (network === 'development'  ||
+      network === 'coverage'     ||
+      network === 'ropsten-fork' ||
+      network === 'rinkeby-fork'
+  ) {
     await deployer.deploy(BFactory);
     await deployer.deploy(BalancerSafeMathMock);
   }

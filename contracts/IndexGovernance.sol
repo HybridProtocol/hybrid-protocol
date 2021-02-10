@@ -9,6 +9,7 @@ import "../interfaces/IIndexHybridToken.sol";
 import "../interfaces/IHybridToken.sol";
 import "../utils/Maintenance.sol";
 import "../libraries/SafeTransfer.sol";
+import "hardhat/console.sol";
 
 contract IndexGovernance is Maintenance, ReentrancyGuard {
     using SafeMath for uint256;
@@ -35,7 +36,7 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
 
     Proposal public proposal;
 
-    event ProposalCreated(uint id, bytes8[] assets, uint16[] weights, uint votingDuration, address initiator, string title, string description, string link);
+    event ProposalCreated(uint id, bytes8[] assets, uint16[] weights, uint deadline, address initiator, string title, string description, string link);
     event Voted(address voter, uint amount, bool decision);
     event ProposalClosed(uint id, bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator, string title, string description, string link);
 
@@ -77,7 +78,7 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
             _description,
             _link
         );
-        emit ProposalCreated(proposal.id, _assets, _weights, _duration, msg.sender, _title, _description, _link);
+        emit ProposalCreated(proposal.id, _assets, _weights, block.number.add(_duration), msg.sender, _title, _description, _link);
     }
 
     function vote(uint _amount, bool _decision) public nonReentrant {
@@ -90,6 +91,10 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
         }
         votesOfUserByProposalId[proposal.id][msg.sender] = votesOfUserByProposalId[proposal.id][msg.sender].add(_amount);
         emit Voted(msg.sender, _amount, _decision);
+    }
+
+    function votesOfUserByProposal(uint proposalId, address _voter) public view returns(uint) {
+        return votesOfUserByProposalId[proposalId][_voter];
     }
 
     function finalize() public nonReentrant {
@@ -112,12 +117,12 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
         delete proposal;
     }
 
-    function claimFunds(uint _amount, uint _proposalId) public nonReentrant {
+    function claimFunds(uint _proposalId) public nonReentrant {
         if (proposal.id == _proposalId) {
             require(proposal.deadline <= block.number, "IndexGovernance: VOTING_IN_PROGRESS");
         }
-        votesOfUserByProposalId[_proposalId][msg.sender] = votesOfUserByProposalId[_proposalId][msg.sender].sub(_amount);
-        SafeTransfer.sendERC20(address(stakingToken), msg.sender, _amount);
+        SafeTransfer.sendERC20(address(stakingToken), msg.sender, votesOfUserByProposalId[_proposalId][msg.sender]);
+        votesOfUserByProposalId[_proposalId][msg.sender] = 0;
     }
 
 }

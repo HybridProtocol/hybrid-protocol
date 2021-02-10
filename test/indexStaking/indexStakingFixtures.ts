@@ -1,7 +1,8 @@
 import { Signer } from 'ethers';
 import { HybridToken } from '../../typechain/HybridToken';
 import { IndexStaking } from '../../typechain/IndexStaking';
-import { HybridToken__factory, IndexStaking__factory } from '../../typechain';
+import { HybridToken__factory } from '../../typechain/factories/HybridToken__factory';
+import { IndexStaking__factory } from '../../typechain/factories/IndexStaking__factory';
 import { expandTo18Decimals } from '../shared/utilities';
 
 export interface IndexStakingFixture {
@@ -15,7 +16,7 @@ const overrides = {
   gasPrice: 1,
 };
 export const IndexStakingParams = {
-  duration: 40, // blocks
+  duration: 6500, // blocks
   totalSupply: expandTo18Decimals(100000000),
   rewardSupply: expandTo18Decimals((48 * 100000000) / 100),
 };

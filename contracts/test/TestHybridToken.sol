@@ -2,20 +2,18 @@
 
 pragma solidity >=0.6.6;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../HybridToken.sol";
 
 
-contract TestHybridToken is ERC20 {
+contract TestHybridToken is HybridToken {
     constructor(
         string memory _name,
         string memory _symbol,
-        address initialAccount,
-        uint initialBalance
-    ) ERC20(_name, _symbol) public {
-        _mint(initialAccount, initialBalance);
-    }
+        address _initialAccount,
+        uint _initialBalance
+    ) HybridToken(_name, _symbol, _initialAccount, _initialBalance) public {}
 
-    function mint(address _account, uint _amount) public {
+    function mint(address _account, uint _amount) external {
         _mint(_account, _amount);
     }
 }
