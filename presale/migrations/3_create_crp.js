@@ -21,6 +21,7 @@ module.exports = async function (deployer, network, accounts) {
   let startWeights;
   let startBalances;
   let swapFee;
+  let startBlock;
 
   if (network === 'development'  ||
       network === 'coverage'     ||
@@ -46,7 +47,7 @@ module.exports = async function (deployer, network, accounts) {
   }
 
   startWeights = [toWei('36'), toWei('4')];
-  startBalances = [toWei('300000'), toWei('1000000')];
+  startBalances = [toWei('177777'), toWei('1000000')];
   swapFee = 10 ** 15;
 
   const poolParams = {
@@ -78,5 +79,10 @@ module.exports = async function (deployer, network, accounts) {
   console.log('Configurable Rights Pool at: ', CONTROLLER);
   console.log('USDC at: ', USDC);
   console.log('HBT at: ', HBT);
+
+  // get current block number
+  const block = await web3.eth.getBlock('latest');
+  startBlock = block.number;
+  console.log(`Start block for HBT bootstrapping: ${startBlock}`);
 };
 
