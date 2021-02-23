@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { Overrides, utils, BigNumber } from 'ethers';
-import { parseBigNumber, parseEthAddress, parseWallet, parseNumber } from '../test/shared/parser';
+import { parseBigNumber, parseEthAddress, parseWallet } from '../test/shared/parser';
 import ConfigurableRightsPool from '../presale/build/contracts/ConfigurableRightsPool.json';
 import { requestConfirmation, mineBlocks } from '../test/shared/utilities';
 
@@ -24,7 +24,7 @@ async function main() {
   const CRP = parseEthAddress('CRP');
   const USDC = parseEthAddress('USDC');
   const HBT = parseEthAddress('HBT');
-  const startBlock = parseNumber('DELTA_PRESALE_START_BLOCK');
+  const startBlock = parseBigNumber('CRP_START_BLOCK', 0);
 
   const overrides: Overrides = { gasPrice: gasPrice };
 
@@ -44,20 +44,24 @@ async function main() {
   const admin = await deltaPresale.getController();
   console.log(`Admin wallet: ${admin}`);
   console.log(`Start block: ${startBlock}`);
-  let block = await ethers.provider.getBlockNumber();
+  const block = await ethers.provider.getBlockNumber();
   console.log(`Current block: ${block}`);
-  blocksElapsed = block - startBlock;
+  blocksElapsed = BigNumber.from(block).sub(startBlock);
   console.log(`Blocks elapsed: ${blocksElapsed}`);
 
   // Calculate the percentages (rounded to 3 decimals to avoid numeric issues)
   pctUSDC = Math.pow(3, -blocksElapsed / 32500) * 0.9;
   pctHBT = 1 - pctUSDC;
-  console.log(`\nNew percentages weights: USDC weight: ${pctUSDC}; HBT weight: ${pctHBT}`);
+  console.log(
+    '\nNew percentages weights: ' +
+      `USDC weight: ${(pctUSDC * 100).toFixed(2)}%; ` +
+      `HBT weight: ${(pctHBT * 100).toFixed(2)}%`,
+  );
 
   // Convert the percentages to denormalized weights
   normUSDC = Math.floor(pctUSDC * 40 * 1000) / 1000;
   normHBT = Math.floor(pctHBT * 40 * 1000) / 1000;
-  console.log(`\nNew denormalized weights: USDC weight: ${normUSDC}; HBT weight: ${normHBT}`);
+  console.log(`New denormalized weights: USDC weight: ${normUSDC}; HBT weight: ${normHBT}`);
 
   await requestConfirmation();
 

@@ -42,7 +42,7 @@ contract SaleHybridToken is ERC20, Ownable, Maintenance, PresaleConstants, Reent
 
     constructor() ERC20(NAME, SYMBOL) public {}
 
-    function mintPresale(
+    function mintForPresales(
         address _alphaPresale,
         address _betaPresale,
         address _gammaPresale

@@ -64,7 +64,7 @@ async function main() {
   const gammaPresale = await GammaPresale.deploy(usdcAddress, saleHybridToken.address, presaleDuration);
   await gammaPresale.deployed();
   console.log('Gamma Presale deployed to:', gammaPresale.address);
-  tx = await saleHybridToken.mintPresale(alphaPresale.address, betaPresale.address, gammaPresale.address);
+  tx = await saleHybridToken.mintForPresales(alphaPresale.address, betaPresale.address, gammaPresale.address);
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log('sHBT tokens were minted to presale contracts');
   await saleHybridToken.addAddressesToMaintainers([alphaPresale.address, betaPresale.address, gammaPresale.address]);

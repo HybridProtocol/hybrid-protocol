@@ -11,25 +11,20 @@ const _overrides: Overrides = {
 async function main() {
   const wallet = parseWallet('PRIVATE_KEY');
   const gasPrice = parseBigNumber('GAS_PRICE_GWEI', 9);
-  const HBTAddress = parseEthAddress('HBT');
-  const XHBTAddress = parseEthAddress('XHBT');
+  const HBT = parseEthAddress('HBT');
+  const XHBT = parseEthAddress('XHBT');
   const minProposalDuration = parseEthAddress('MIN_PROPOSAL_DURATION');
 
   const overrides: Overrides = { ..._overrides, gasPrice: gasPrice };
   console.log('Network:', (await ethers.provider.getNetwork()).name);
-  console.log(`HBT address: ${HBTAddress}`);
-  console.log(`xHBT address: ${XHBTAddress}`);
-  console.log(`Minimum duration of proposal (blocks): ${minProposalDuration}`);
+  console.log(`HBT address: ${HBT}`);
+  console.log(`xHBT address: ${XHBT}`);
+  console.log(`Minimum duration of proposal: ${minProposalDuration} blocks`);
 
   await requestConfirmation();
 
   console.log('Deploy Index Governance');
-  const indexGovernance = await new IndexGovernance__factory(wallet).deploy(
-    XHBTAddress,
-    HBTAddress,
-    minProposalDuration,
-    overrides,
-  );
+  const indexGovernance = await new IndexGovernance__factory(wallet).deploy(XHBT, HBT, minProposalDuration, overrides);
   console.log(`\x1b[32m${indexGovernance.address}\x1b[0m`);
   console.log(`Waiting for result of: \x1b[36m${indexGovernance.deployTransaction.hash}\x1b[0m`);
   await indexGovernance.deployTransaction.wait();

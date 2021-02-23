@@ -11,7 +11,8 @@ const _overrides: Overrides = {
 async function main() {
   const wallet = parseWallet('PRIVATE_KEY');
   const gasPrice = parseBigNumber('GAS_PRICE_GWEI', 9);
-  const HBTAddress = parseEthAddress('HBT');
+  const HBT = parseEthAddress('HBT');
+  const sHBT = parseEthAddress('SHBT');
   const alphaPresaleAddress = parseEthAddress('ALPHA_PRESALE');
   const betaPresaleAddress = parseEthAddress('BETA_PRESALE');
   const gammaPresaleAddress = parseEthAddress('GAMMA_PRESALE');
@@ -19,7 +20,8 @@ async function main() {
   const overrides: Overrides = { ..._overrides, gasPrice: gasPrice };
 
   console.log('Network:', (await ethers.provider.getNetwork()).name);
-  console.log(`HBT address: ${HBTAddress}`);
+  console.log(`sHBT address: ${sHBT}`);
+  console.log(`HBT address: ${HBT}`);
   console.log(`Alpha Presale address: ${alphaPresaleAddress}`);
   console.log(`Beta Presale address: ${betaPresaleAddress}`);
   console.log(`Gamma Presale address: ${gammaPresaleAddress}`);
@@ -31,7 +33,8 @@ async function main() {
     alphaPresaleAddress,
     betaPresaleAddress,
     gammaPresaleAddress,
-    HBTAddress,
+    HBT,
+    sHBT,
     overrides,
   );
   console.log(`\x1b[32m${vestingSwap.address}\x1b[0m`);

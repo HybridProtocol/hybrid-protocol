@@ -27,7 +27,7 @@ async function main() {
   await requestConfirmation();
 
   console.log('Minting sHBT for presales');
-  const tx = await SHBT.mintPresale(alphaPresaleAddress, betaPresaleAddress, gammaPresaleAddress, overrides);
+  const tx = await SHBT.mintForPresales(alphaPresaleAddress, betaPresaleAddress, gammaPresaleAddress, overrides);
   console.log(`Waiting for result of: \x1b[36m${tx.hash}\x1b[0m`);
   await tx.wait();
   console.log('Success');

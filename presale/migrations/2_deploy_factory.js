@@ -8,14 +8,11 @@ const BalancerSafeMathMock = artifacts.require('BalancerSafeMathMock');
 require('dotenv').config();
 
 module.exports = async function (deployer, network, accounts) {
-  if (network === 'development'  ||
-      network === 'coverage'     ||
-      network === 'ropsten-fork' ||
-      network === 'rinkeby-fork'
-  ) {
-    await deployer.deploy(BFactory);
+  if (network === 'development' || network === 'coverage') {
     await deployer.deploy(BalancerSafeMathMock);
   }
+
+  await deployer.deploy(BFactory);
 
   await deployer.deploy(RightsManager);
   await deployer.deploy(SmartPoolManager);
@@ -27,5 +24,6 @@ module.exports = async function (deployer, network, accounts) {
 
   await deployer.deploy(CRPFactory);
 
+  console.log('BFactory at: ', BFactory.address);
   console.log('CRP Factory at: ', CRPFactory.address);
 };

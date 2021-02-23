@@ -45,7 +45,11 @@ describe('Presale', () => {
 
       // get sHBT contact
       const sHBT = fixture.sHBT;
-      await sHBT.mintPresale(fixture.alphaPresale.address, fixture.betaPresale.address, fixture.gammaPresale.address);
+      await sHBT.mintForPresales(
+        fixture.alphaPresale.address,
+        fixture.betaPresale.address,
+        fixture.gammaPresale.address,
+      );
       await sHBT.addAddressesToMaintainers([
         fixture.alphaPresale.address,
         fixture.betaPresale.address,
@@ -109,7 +113,7 @@ async function testPresaleContracts(
     purchaseLimit = await presaleContract[purchaseLimitMethodName]();
 
     // init test action
-    await sHBT.mintPresale(fixture.alphaPresale.address, fixture.betaPresale.address, fixture.gammaPresale.address); // send sHBT tokens to alphaPresale, betaPresale and gammaPresale addresses
+    await sHBT.mintForPresales(fixture.alphaPresale.address, fixture.betaPresale.address, fixture.gammaPresale.address); // send sHBT tokens to alphaPresale, betaPresale and gammaPresale addresses
     await sHBT.addAddressesToMaintainers([
       fixture.alphaPresale.address,
       fixture.betaPresale.address,
