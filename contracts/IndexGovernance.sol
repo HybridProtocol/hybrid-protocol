@@ -132,13 +132,26 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
     }
 
     function getProposalInfo(uint _id) view external returns (
+        uint id, 
+        bytes8[] memory assets,
+        uint16[] memory weights,
+        uint deadline,
+        address initiator,
         string memory title,
         string memory description,
-        uint deadline
+        string memory link
     ) {
+        id = proposals[_id].id;
+        assets = proposals[_id].assets;
+        weights = proposals[_id].weights;
+        deadline = proposals[_id].deadline;
+        initiator = proposals[_id].initiator;
         title = proposals[_id].title;
         description = proposals[_id].description;
-        deadline = proposals[_id].deadline;
+        link = proposals[_id].link;
     }
 
+    function getProposals() external view returns (uint[] memory) {
+        return proposalIds;
+    }
 }
