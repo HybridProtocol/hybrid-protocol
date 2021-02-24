@@ -57,7 +57,7 @@ const config: HardhatUserConfig = {
       url: 'http://127.0.0.1:8555', // Coverage launches its own ganache-cli client
     },
     okexchain_testnet: {
-      url: 'http://okexchaintest-rpc2.okex.com:26659',
+      url: 'http://okexchaintest.okexcn.com:26659/',
       accounts: [secret],
     },
   },

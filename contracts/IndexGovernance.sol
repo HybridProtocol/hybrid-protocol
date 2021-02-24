@@ -36,6 +36,9 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
 
     Proposal public proposal;
 
+    uint[] public proposalIds;
+    mapping (uint=>Proposal) proposals;
+
     event ProposalCreated(uint id, bytes8[] assets, uint16[] weights, uint deadline, address initiator, string title, string description, string link);
     event Voted(address voter, uint amount, bool decision);
     event ProposalClosed(uint id, bool accepted, bytes8[] assets, uint16[] weights, uint pros, uint cons, address initiator, string title, string description, string link);
@@ -78,6 +81,8 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
             _description,
             _link
         );
+        proposalIds.push(proposal.id);
+        proposals[proposal.id] = proposal;
         emit ProposalCreated(proposal.id, _assets, _weights, block.number.add(_duration), msg.sender, _title, _description, _link);
     }
 
@@ -114,6 +119,7 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
             proposal.description,
             proposal.link
         );
+        proposals[proposal.id] = proposal;
         delete proposal;
     }
 
@@ -123,6 +129,16 @@ contract IndexGovernance is Maintenance, ReentrancyGuard {
         }
         SafeTransfer.sendERC20(address(stakingToken), msg.sender, votesOfUserByProposalId[_proposalId][msg.sender]);
         votesOfUserByProposalId[_proposalId][msg.sender] = 0;
+    }
+
+    function getProposalInfo(uint _id) view external returns (
+        string memory title,
+        string memory description,
+        uint deadline
+    ) {
+        title = proposals[_id].title;
+        description = proposals[_id].description;
+        deadline = proposals[_id].deadline;
     }
 
 }
