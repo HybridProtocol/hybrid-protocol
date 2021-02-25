@@ -89,16 +89,20 @@ contract VestingSwap is Ownable, ReentrancyGuard, PresaleConstants {
     }
 
     function availableAmountFor(address _presale, address _account) public view returns (uint available) {
-        uint percentagesUnlocked = 100;
-        uint purchased = IPresale(_presale).purchasedAmount(_account);
-        uint monthsElapsed = now.sub(swap[_presale].start).div(SECONDS_PER_MONTH);
-        if (monthsElapsed < 6) {
-            percentagesUnlocked = 0;
-            for (uint8 i = 0; i <= monthsElapsed; i++) {
-                percentagesUnlocked = percentagesUnlocked.add(swap[_presale].vesting[i]);
+        if (swap[_presale].start > 0) {
+            uint percentagesUnlocked = 100;
+            uint purchased = IPresale(_presale).purchasedAmount(_account);
+            uint monthsElapsed = now.sub(swap[_presale].start).div(SECONDS_PER_MONTH);
+            if (monthsElapsed < 6) {
+                percentagesUnlocked = 0;
+                for (uint8 i = 0; i <= monthsElapsed; i++) {
+                    percentagesUnlocked = percentagesUnlocked.add(swap[_presale].vesting[i]);
+                }
             }
+            available = purchased.mul(percentagesUnlocked).div(100).sub(presaleSwappedAmountOf[_presale][_account]);
+        } else {
+            available = 0;
         }
-        available = purchased.mul(percentagesUnlocked).div(100).sub(presaleSwappedAmountOf[_presale][_account]);
     }
 
     function _swap(address _presale, address _account, uint _amount) private {
