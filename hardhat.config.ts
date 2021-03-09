@@ -56,6 +56,10 @@ const config: HardhatUserConfig = {
     coverage: {
       url: 'http://127.0.0.1:8555', // Coverage launches its own ganache-cli client
     },
+    okexchain_testnet: {
+      url: 'http://okexchaintest-rpc1.okex.com:26657',
+      accounts: [secret],
+    },
   },
   typechain: {
     outDir: 'typechain',

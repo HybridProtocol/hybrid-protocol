@@ -13,7 +13,8 @@
     "lint": "eslint ./ --fix",
     "lint-quick": "pretty-quick --staged --pattern \"**/*.*(ts|tsx)\"",
     "deploy-testnet": "npm run rebuild && npx hardhat run scripts/deploy_testnet.ts",
-    "deploy-ropsten": "npx hardhat run scripts/deploy_testnet.ts --network ropsten"
+    "deploy-ropsten": "npx hardhat run scripts/deploy_testnet.ts --network ropsten",
+    "deploy-okexchain-testnet": "npx hardhat run scripts/deploy_testnet.ts --network okexchain_testnet"
   },
   "husky": {
     "hooks": {

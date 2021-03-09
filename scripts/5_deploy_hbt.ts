@@ -1,8 +1,7 @@
 import { ethers } from 'hardhat';
 import { Overrides } from 'ethers';
-import { parseBigNumber, parseWallet } from '../test/shared/parser';
+import { parseBigNumber, parseWallet, parseETH } from '../test/shared/parser';
 import { HybridToken__factory } from '../typechain/factories/HybridToken__factory';
-import { parseEther } from 'ethers/lib/utils';
 import { requestConfirmation } from '../test/shared/utilities';
 
 const _overrides: Overrides = {
@@ -12,7 +11,7 @@ const _overrides: Overrides = {
 async function main() {
   const wallet = parseWallet('PRIVATE_KEY');
   const gasPrice = parseBigNumber('GAS_PRICE_GWEI', 9);
-  const totalSupplyHBT = parseEther('HBT_TOTAL_SUPPLY');
+  const totalSupplyHBT = parseETH('HBT_TOTAL_SUPPLY');
   const overrides: Overrides = { ..._overrides, gasPrice: gasPrice };
 
   console.log('Network:', (await ethers.provider.getNetwork()).name);

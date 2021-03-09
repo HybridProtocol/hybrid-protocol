@@ -65,6 +65,16 @@ export function parseEthAddress(property: string): string {
   }
 }
 
+export function parseNumber(property: string): number {
+  const value = process.env[property];
+  assertDefined(property, value);
+  try {
+    return parseInt(value);
+  } catch (e) {
+    throw new Error(`Invalid address ${property}: ${value}`);
+  }
+}
+
 export function parseBool(property: string): boolean {
   return /true/i.test(process.env[property] ?? '');
 }

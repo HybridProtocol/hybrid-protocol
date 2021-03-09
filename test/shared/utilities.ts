@@ -102,20 +102,6 @@ export function convertStringToArrayish(data: string): BytesLike {
   return `0x${hexNumber}`;
 }
 
-export const USDCAddress: string = (() => {
-  switch (network.name) {
-    case 'homestead':
-      return '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'; // Mainnet
-    case 'rinkeby':
-    case 'ropsten':
-    case 'hardhat':
-    case 'localhost':
-      return '0x0000000000000000000000000000000000000000';
-    default:
-      throw new Error(`Unknown network ${network?.name}`);
-  }
-})();
-
 export async function requestConfirmation(message = 'Ready to continue?'): Promise<void> {
   const ok = await yesno({
     yesValues: ['', 'yes', 'y', 'yes'],

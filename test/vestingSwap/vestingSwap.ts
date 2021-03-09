@@ -49,7 +49,7 @@ describe('VestingSwap', async () => {
     vestingSwap = vsFixtures.vestingSwap;
 
     // init test actions
-    await sHBT.mintPresale(alphaPresale.address, betaPresale.address, gammaPresale.address); // send sHBT tokens to alphaPresale, betaPresale and gammaPresale addresses
+    await sHBT.mintForPresales(alphaPresale.address, betaPresale.address, gammaPresale.address); // send sHBT tokens to alphaPresale, betaPresale and gammaPresale addresses
     await sHBT.addAddressesToMaintainers([
       alphaPresale.address,
       betaPresale.address,

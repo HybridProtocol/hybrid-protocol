@@ -23,8 +23,8 @@ async function main() {
   console.log(`HBT address: ${HBTAddress}`);
   console.log(`xHBT address: ${XHBTAddress}`);
   console.log(`Total supply HBT: ${totalSupplyHBT}`);
-  console.log(`Staking duration: ${stakingDuration}`);
-  console.log(`Percentages of total supply for staking: ${percentages}`);
+  console.log(`Staking duration: ${stakingDuration} blocks`);
+  console.log(`Percentages of total supply for staking: ${percentages}%`);
   console.log(`Reward supply: ${rewardSupply}`);
 
   await requestConfirmation();
